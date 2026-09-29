@@ -1,0 +1,97 @@
+:root {
+  --bg: #0f141b;
+  --panel: #182029;
+  --panel-2: #1f2833;
+  --border: #2b3542;
+  --text: #e8edf3;
+  --muted: #94a3b8;
+  --accent: #4ade80;
+  --danger: #f87171;
+  --radius: 12px;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+}
+
+.container { max-width: 1080px; margin: 0 auto; padding: 24px 16px 64px; }
+
+header.top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+header.top h1 { font-size: 22px; margin: 0; }
+header.top p { color: var(--muted); margin: 4px 0 0; font-size: 14px; }
+
+.tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.tabs button {
+  background: var(--panel); color: var(--muted); border: 1px solid var(--border);
+  padding: 10px 16px; border-radius: 999px; cursor: pointer; font-size: 14px;
+}
+.tabs button.active { background: var(--panel-2); color: var(--text); border-color: var(--accent); }
+
+.card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px; margin-bottom: 16px;
+}
+.card h2 { margin: 0 0 14px; font-size: 17px; }
+
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 760px) { .grid-2 { grid-template-columns: 1fr; } }
+
+label.field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); flex: 1 1 140px; }
+input, select, textarea {
+  background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 10px 12px; font-size: 14px; width: 100%;
+}
+input:focus, select:focus { outline: 1px solid var(--accent); }
+
+button.btn {
+  background: var(--accent); color: #06210f; border: none; border-radius: 8px;
+  padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+button.btn.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+button.btn.danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 6px 12px; }
+button.btn.small { padding: 6px 12px; font-size: 13px; }
+button.btn:disabled { opacity: 0.5; cursor: default; }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+td.amount { font-variant-numeric: tabular-nums; text-align: right; }
+th.amount { text-align: right; }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 13px;
+  background: var(--panel-2); border: 1px solid var(--border);
+  padding: 3px 10px; border-radius: 999px;
+}
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+.stat { background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+.stat .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.stat .value { font-size: 26px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+
+.filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; align-items: end; }
+.filters .field { min-width: 130px; }
+
+.notice { padding: 12px 14px; border-radius: 8px; font-size: 14px; margin-bottom: 14px; }
+.notice.error { background: rgba(248, 113, 113, 0.12); border: 1px solid var(--danger); }
+.notice.ok { background: rgba(74, 222, 128, 0.1); border: 1px solid var(--accent); }
+
+.month-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.month-nav h2 { margin: 0; font-size: 18px; min-width: 170px; text-align: center; }
+
+.toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+.toolbar h2 { margin: 0; font-size: 17px; }
+.hint { color: var(--muted); font-size: 13px; }
+pre.sample {
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px; font-size: 13px; overflow-x: auto; color: var(--muted);
+}
+.empty { color: var(--muted); text-align: center; padding: 28px 0; font-size: 14px; }
+.edit-row td { background: rgba(74, 222, 128, 0.05); }
