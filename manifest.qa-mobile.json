@@ -1,0 +1,29 @@
+{
+  "schema": 2,
+  "permissions": ["llm.complete", "storage.read", "storage.write"],
+  "host_capabilities": ["llm.complete", "aps.kv"],
+  "required_executas": [],
+  "optional_executas": [],
+  "ui": {
+    "bundle": { "format": "static-spa", "entry": "index.html", "external_origins": [] },
+    "views": [
+      {
+        "name": "main",
+        "title": "Money Companion (QA mobile)",
+        "default": true,
+        "entry": "index.html",
+        "default_size": { "w": 390, "h": 780 },
+        "min_size": { "w": 320, "h": 480 },
+        "max_size": { "w": 1600, "h": 1200 },
+        "resizable": true,
+        "movable": true,
+        "single_instance": true
+      }
+    ],
+    "host_api": {
+      "llm": ["complete"],
+      "storage": ["get", "set", "delete", "list"],
+      "window": ["set_title", "ready"]
+    }
+  }
+}

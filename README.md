@@ -1,64 +1,54 @@
-# Household Expense Tracker
+# Money Companion
 
-A small Next.js app for tracking household expenses, backed by SQLite
-(`better-sqlite3`). No external database or auth needed.
+A friendly personal expense tracker built as a **UI-only Anna App**.
 
-## Features
+Architecture:
 
-- **CRUD**: add, edit, and delete expenses
-- **Categories**: create, rename, recolor, and delete categories (with 8 seeded defaults)
-- **Monthly summaries**: totals, averages, per-category breakdown, biggest expenses
-- **Charts**: monthly bar chart for the year + category pie chart (recharts)
-- **CSV import**: upload a bank export and import it in one go
+    React 19 + TypeScript + Vite
+        -> Anna static-spa bundle
+        -> Anna App Runtime
+        -> Anna Host APIs (anna.llm.complete, anna.storage)
 
-## Prerequisites
+- No Node/Express/Next server.
+- No SQLite/PostgreSQL/Prisma/Drizzle.
+- No Executa (add one only if a future capability truly requires it).
 
-- Node.js 18.18+ (Node 20+ recommended)
-- npm
+## Status
 
-## Run it locally
+Phase 1 (Foundation) is implemented: Anna contract, Vite build, hash routing,
+design tokens, responsive shell, reusable UI components, Anna runtime
+abstraction, minimal Anna Storage abstraction, and the LlmService interface.
 
-```bash
-cd expense-tracker
-npm install
-npm run dev
-```
+Not implemented yet: expense CRUD persistence, budgets, analytics, AI behavior,
+chat, merchant analysis, and publishing.
 
-Then open http://localhost:3000.
+## Scripts
 
-The SQLite database is created automatically at `data/expenses.db` on first
-start (it's git-ignored). Seeded categories appear on first run.
+| Command | Purpose |
+| --- | --- |
+| npm run dev | Vite dev server (standalone browser) |
+| npm run build | Build the Anna bundle into bundle/ |
+| npm run typecheck | TypeScript check |
+| npm test | Vitest unit tests |
+| npm run validate | anna-app validate --strict |
+| npm run harness | Run the Anna local harness |
 
-## CSV format
+## Build output
 
-Columns are case-insensitive; the header row is required:
+npm run build produces the Anna static-spa bundle:
 
-```csv
-date,description,amount,category
-2026-09-01,Weekly groceries,84.20,Groceries
-2026-09-05,Electric bill,132.45,Utilities
-```
+    bundle/
+      index.html
+      app.js
+      styles.css
 
-- `date` must be `YYYY-MM-DD`
-- `amount` may include `$` and commas; negative values are stored as positive spending
-- `category` names are created automatically when they don't exist
-- Rows with bad dates/amounts are skipped and reported
+## Anna contract
 
-## API
+- app.json - CLI project identity (slug, name, version).
+- manifest.json - schema 2, UI-only, least-privilege permissions.
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET/POST | `/api/expenses` | List (supports `?month=YYYY-MM`, `?category=`, `?q=`, `?limit=`) / create |
-| GET/PUT/DELETE | `/api/expenses/:id` | Read / update / delete one expense |
-| GET/POST | `/api/categories` | List / create |
-| PUT/DELETE | `/api/categories/:id` | Update / delete (expenses become Uncategorized) |
-| GET | `/api/summary?month=YYYY-MM` | Monthly totals, breakdown, top expenses |
-| GET | `/api/summary?year=YYYY` | 12-month series, yearly totals, category totals |
-| POST | `/api/import` | CSV import (JSON `{ csv }` or multipart `file`) |
+## Runtime behaviour
 
-## Build for production
-
-```bash
-npm run build
-npm start
-```
+Outside the Anna host the app runs in standalone mode using localStorage for
+persistence and reporting the LLM as unavailable. Inside Anna it uses the Host
+API. See Settings for a live connection and storage round-trip check.
