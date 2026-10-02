@@ -10,6 +10,7 @@ import { MoneyBuddyPage } from "@/features/ai/MoneyBuddyPage";
 import { SettingsPage } from "@/features/settings/SettingsPage";
 import { NotFoundPage } from "@/features/NotFoundPage";
 import { ExpensesProvider } from "@/services/expenses/useExpenses";
+import { BudgetsProvider } from "@/services/budgets/useBudgets";
 
 export function App() {
   const [route, navigate] = useRoute();
@@ -17,9 +18,11 @@ export function App() {
   return (
     <ToastProvider>
       <ExpensesProvider>
-        <AppShell route={route} onNavigate={navigate}>
-          {renderRoute(route, navigate)}
-        </AppShell>
+        <BudgetsProvider>
+          <AppShell route={route} onNavigate={navigate}>
+            {renderRoute(route, navigate)}
+          </AppShell>
+        </BudgetsProvider>
       </ExpensesProvider>
     </ToastProvider>
   );
