@@ -22,6 +22,8 @@ import { sortExpensesByRecency } from "@/lib/categories";
 import { CategoryBreakdown } from "./CategoryBreakdown";
 import { RecentExpenses } from "./RecentExpenses";
 import { SpendingChanges } from "./SpendingChanges";
+import { AIInsightCard } from "@/features/ai/AIInsightCard";
+import { useInsight } from "@/features/ai/useInsight";
 
 const SpendingChart = lazy(() => import("@/components/ui/SpendingChart"));
 
@@ -46,7 +48,7 @@ function budgetSummaryText(spent: number, limit: number, currency: string): stri
 
 export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => void }) {
   const { status: expStatus, expenses } = useExpenses();
-  const { status: budgetStatus, monthlyBudget } = useBudgets();
+  const { status: budgetStatus, monthlyBudget, budgets } = useBudgets();
   const isLoading = expStatus === "loading" || budgetStatus === "loading";
 
   const now = currentMonthKey();
@@ -60,6 +62,10 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
   const recentExpenses = sortExpensesByRecency(monthExpenses).slice(0, 4);
   const previousMonthExpenses = comparison ? filterByMonth(expenses, comparison.previousKey) : [];
   const changes = detectMeaningfulChanges(monthExpenses, previousMonthExpenses, { maxResults: 3 });
+
+  // AI insight for the most recently added expense (only triggers when expense id changes)
+  const latestExpense = sortExpensesByRecency(monthExpenses)[0] ?? null;
+  const insight = useInsight(latestExpense, expenses, budgets);
 
   if (isLoading) {
     return (
@@ -150,6 +156,9 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
           <RecentExpenses expenses={recentExpenses} onNavigate={onNavigate} />
         </Card>
       ) : null}
+
+      {/* AI insight for the most recent expense (hidden in standalone/no-LLM) */}
+      <AIInsightCard status={insight.status} result={insight.result} />
 
       {/* Prompt to set a budget if none exists */}
       {!monthlyBudget && monthExpenses.length > 0 ? (
