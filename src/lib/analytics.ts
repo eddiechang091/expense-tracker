@@ -319,3 +319,24 @@ export function detectRecurringExpenses(
   recurring.sort((a, b) => b.occurrences - a.occurrences || b.total - a.total);
   return recurring;
 }
+
+export function calculateBudgetProgress(spent: number, limit: number): BudgetProgressInfo {
+  const safeLimit = Math.max(0, limit);
+  const safeSpent = Math.max(0, spent);
+  const remaining = Math.max(0, safeLimit - safeSpent);
+  const pct = safeLimit > 0 ? Math.min(100, Math.round((safeSpent / safeLimit) * 100)) : 0;
+  const over = safeLimit > 0 && safeSpent > safeLimit;
+  let status: BudgetStatus;
+  if (safeLimit === 0) status = "none";
+  else if (over) status = "over";
+  else if (pct >= 80) status = "watch";
+  else status = "on-track";
+  return {
+    limit: safeLimit,
+    spent: Math.round(safeSpent * 100) / 100,
+    remaining: Math.round(remaining * 100) / 100,
+    pct,
+    over,
+    status,
+  };
+}
