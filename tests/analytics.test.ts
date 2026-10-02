@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  calculateBudgetProgress,
   comparePeriods,
   dailyTotals,
   detectMeaningfulChanges,
@@ -411,5 +412,63 @@ describe("detectRecurringExpenses", () => {
     expect(result[0].total).toBeCloseTo(29.97, 2);
     expect(result[0].firstDate).toBe("2026-07-05");
     expect(result[0].lastDate).toBe("2026-09-03");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// calculateBudgetProgress
+// ---------------------------------------------------------------------------
+describe("calculateBudgetProgress", () => {
+  it("returns 'on-track' status when under 80% of limit", () => {
+    const result = calculateBudgetProgress(60, 100);
+    expect(result.status).toBe("on-track");
+    expect(result.pct).toBe(60);
+    expect(result.remaining).toBe(40);
+    expect(result.over).toBe(false);
+  });
+
+  it("returns 'watch' status at exactly 80%", () => {
+    const result = calculateBudgetProgress(80, 100);
+    expect(result.status).toBe("watch");
+    expect(result.pct).toBe(80);
+  });
+
+  it("returns 'watch' status between 80% and 100%", () => {
+    const result = calculateBudgetProgress(90, 100);
+    expect(result.status).toBe("watch");
+    expect(result.pct).toBe(90);
+  });
+
+  it("returns 'over' status when spent exceeds limit", () => {
+    const result = calculateBudgetProgress(120, 100);
+    expect(result.status).toBe("over");
+    expect(result.over).toBe(true);
+    expect(result.pct).toBe(100);
+    expect(result.remaining).toBe(0);
+  });
+
+  it("returns 'none' status when limit is zero", () => {
+    const result = calculateBudgetProgress(50, 0);
+    expect(result.status).toBe("none");
+    expect(result.pct).toBe(0);
+    expect(result.limit).toBe(0);
+  });
+
+  it("clamps pct at 100 when well over budget", () => {
+    const result = calculateBudgetProgress(500, 100);
+    expect(result.pct).toBe(100);
+  });
+
+  it("rounds spent and remaining to 2 decimal places", () => {
+    const result = calculateBudgetProgress(33.333, 100);
+    expect(result.spent).toBe(33.33);
+    expect(result.remaining).toBe(66.67);
+  });
+
+  it("treats negative spent as zero", () => {
+    const result = calculateBudgetProgress(-10, 100);
+    expect(result.spent).toBe(0);
+    expect(result.remaining).toBe(100);
+    expect(result.status).toBe("on-track");
   });
 });

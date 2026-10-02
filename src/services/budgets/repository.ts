@@ -4,12 +4,15 @@ import { DEFAULT_CURRENCY, STORAGE_KEYS } from "@/lib/constants";
 import { newId } from "@/lib/utils";
 import { normalizeCategoryId } from "@/lib/categories";
 import type { MonthlyBudget } from "@/lib/types";
-import { assertStorable, serializeMutation } from "@/services/expenses/store";
 import {
   BudgetStoreError,
   budgetNotFoundError,
   budgetStorageError,
   sanitizeBudgetAmount,
+  serializeBudgetMutation,
+  assertBudgetStorable,
+  readBudgetIndex,
+  writeBudgetIndex,
   unwrapBudgetDoc,
   wrapBudgetDoc,
   type BudgetInput,
@@ -24,43 +27,15 @@ export interface BudgetRepository {
   remove(id: string): Promise<void>;
 }
 
-async function readBudgetIds(store: KvStore): Promise<string[]> {
-  let doc: unknown;
-  try {
-    doc = await store.get<{ version: number; ids: unknown }>(STORAGE_KEYS.budgetsIndex);
-  } catch {
-    throw budgetStorageError();
-  }
-  if (!doc || typeof doc !== "object") return [];
-  const ids = (doc as { ids: unknown }).ids;
-  if (!Array.isArray(ids)) return [];
-  return ids.filter((id): id is string => typeof id === "string" && id.length > 0);
-}
-
-async function writeBudgetIds(store: KvStore, ids: string[]): Promise<void> {
-  const doc = { version: 1, ids };
-  assertStorable(doc, "budgets index");
-  try {
-    await store.set(STORAGE_KEYS.budgetsIndex, doc);
-  } catch (error) {
-    if (error instanceof BudgetStoreError) throw error;
-    throw budgetStorageError();
-  }
-}
-
-function budgetKey(id: string): string {
-  return `budgets:item:${id}`;
-}
-
 export function createBudgetRepository(store: KvStore): BudgetRepository {
   return {
     async list(): Promise<MonthlyBudget[]> {
-      const ids = await readBudgetIds(store);
+      const ids = await readBudgetIndex(store);
       if (ids.length === 0) return [];
       const settled = await Promise.all(
         ids.map(async (id) => {
           try {
-            const doc = await store.get<unknown>(budgetKey(id));
+            const doc = await store.get<unknown>(STORAGE_KEYS.budget(id));
             return unwrapBudgetDoc(doc);
           } catch {
             return null;
@@ -74,33 +49,47 @@ export function createBudgetRepository(store: KvStore): BudgetRepository {
       const amount = sanitizeBudgetAmount(input.amount);
       const categoryId = normalizeCategoryId(input.categoryId);
       const currency = (input.currency || DEFAULT_CURRENCY).trim().toUpperCase() || DEFAULT_CURRENCY;
-      return serializeMutation(async () => {
-        const existing = await this.list();
-        const match = existing.find((budget) => budget.categoryId === categoryId) ?? null;
+      return serializeBudgetMutation(async () => {
+        const ids = await readBudgetIndex(store);
+        // Find existing budget for this category by reading each record.
+        let existing: MonthlyBudget | null = null;
+        for (const id of ids) {
+          try {
+            const doc = await store.get<unknown>(STORAGE_KEYS.budget(id));
+            const record = unwrapBudgetDoc(doc);
+            if (record && record.categoryId === categoryId) {
+              existing = record;
+              break;
+            }
+          } catch {
+            continue;
+          }
+        }
         const now = new Date().toISOString();
         const budget: MonthlyBudget = {
-          id: match?.id ?? newId(),
+          id: existing?.id ?? newId(),
           categoryId,
           amount,
           currency,
           period: "monthly",
-          createdAt: match?.createdAt ?? now,
+          createdAt: existing?.createdAt ?? now,
           updatedAt: now,
         };
         const doc = wrapBudgetDoc(budget);
-        assertStorable(doc, "budget");
+        assertBudgetStorable(doc);
         try {
-          await store.set(budgetKey(budget.id), doc);
+          await store.set(STORAGE_KEYS.budget(budget.id), doc);
         } catch (error) {
           if (error instanceof BudgetStoreError) throw error;
           throw budgetStorageError();
         }
         try {
-          const ids = await readBudgetIds(store);
-          if (!ids.includes(budget.id)) ids.push(budget.id);
-          await writeBudgetIds(store, ids);
+          if (!ids.includes(budget.id)) {
+            ids.push(budget.id);
+            await writeBudgetIndex(store, ids);
+          }
         } catch (error) {
-          await store.remove(budgetKey(budget.id)).catch(() => undefined);
+          await store.remove(STORAGE_KEYS.budget(budget.id)).catch(() => undefined);
           if (error instanceof BudgetStoreError) throw error;
           throw budgetStorageError();
         }
@@ -109,23 +98,23 @@ export function createBudgetRepository(store: KvStore): BudgetRepository {
     },
 
     async remove(id: string): Promise<void> {
-      return serializeMutation(async () => {
+      return serializeBudgetMutation(async () => {
         let doc: unknown;
         try {
-          doc = await store.get<unknown>(budgetKey(id));
+          doc = await store.get<unknown>(STORAGE_KEYS.budget(id));
         } catch {
           throw budgetStorageError();
         }
         if (!unwrapBudgetDoc(doc)) throw budgetNotFoundError();
         try {
-          await store.remove(budgetKey(id));
+          await store.remove(STORAGE_KEYS.budget(id));
         } catch {
           throw budgetStorageError();
         }
         try {
-          const ids = await readBudgetIds(store);
+          const ids = await readBudgetIndex(store);
           const cleaned = ids.filter((entry) => entry !== id);
-          if (cleaned.length !== ids.length) await writeBudgetIds(store, cleaned);
+          if (cleaned.length !== ids.length) await writeBudgetIndex(store, cleaned);
         } catch {
           console.warn("[budgets] index cleanup deferred; list() tolerates stale ids.");
         }
