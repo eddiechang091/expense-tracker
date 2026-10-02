@@ -1,5 +1,6 @@
 import type { MonthlyBudget } from "@/lib/types";
-import { STORAGE_VERSION } from "@/lib/constants";
+import type { KvStore } from "@/services/anna/storage";
+import { STORAGE_KEYS, STORAGE_VERSION } from "@/lib/constants";
 
 export type BudgetStoreErrorCode = "not-found" | "storage" | "too-large";
 
@@ -27,6 +28,8 @@ export interface BudgetInput {
   currency?: string;
 }
 
+const MAX_BUDGET_BYTES = 65536;
+
 export function isBudgetRecord(value: unknown): value is MonthlyBudget {
   if (!value || typeof value !== "object") return false;
   const record = value as Record<string, unknown>;
@@ -51,6 +54,12 @@ export function sanitizeBudgetAmount(amount: number): number {
   return Math.round(amount * 100) / 100;
 }
 
+export function assertBudgetStorable(value: unknown): void {
+  if (JSON.stringify(value).length > MAX_BUDGET_BYTES) {
+    throw new BudgetStoreError("too-large", "That budget couldn't be saved.");
+  }
+}
+
 export function wrapBudgetDoc(budget: MonthlyBudget): { version: number; budget: MonthlyBudget } {
   return { version: STORAGE_VERSION, budget };
 }
@@ -59,4 +68,43 @@ export function unwrapBudgetDoc(doc: unknown): MonthlyBudget | null {
   if (!doc || typeof doc !== "object") return null;
   const budget = (doc as { budget: unknown }).budget;
   return isBudgetRecord(budget) ? budget : null;
+}
+
+let budgetMutationChain: Promise<void> = Promise.resolve();
+
+export function serializeBudgetMutation<T>(op: () => Promise<T>): Promise<T> {
+  const next = budgetMutationChain.then(op, op);
+  budgetMutationChain = next.then(
+    () => undefined,
+    () => undefined
+  );
+  return next;
+}
+
+export function resetBudgetMutationChain(): void {
+  budgetMutationChain = Promise.resolve();
+}
+
+export async function readBudgetIndex(store: KvStore): Promise<string[]> {
+  let doc: unknown;
+  try {
+    doc = await store.get<{ version: number; ids: unknown }>(STORAGE_KEYS.budgetsIndex);
+  } catch {
+    throw budgetStorageError();
+  }
+  if (!doc || typeof doc !== "object") return [];
+  const ids = (doc as { ids: unknown }).ids;
+  if (!Array.isArray(ids)) return [];
+  return ids.filter((id): id is string => typeof id === "string" && id.length > 0);
+}
+
+export async function writeBudgetIndex(store: KvStore, ids: string[]): Promise<void> {
+  const doc = { version: STORAGE_VERSION, ids };
+  assertBudgetStorable(doc);
+  try {
+    await store.set(STORAGE_KEYS.budgetsIndex, doc);
+  } catch (error) {
+    if (error instanceof BudgetStoreError) throw error;
+    throw budgetStorageError();
+  }
 }
