@@ -4,6 +4,7 @@ data/*.db*
 .env*.local
 .clinerules/*
 .github/*
+.vscode/*
 docs/*
 
 # Anna build + runtime outputs

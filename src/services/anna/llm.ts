@@ -43,12 +43,24 @@ function unwrapResult(result: unknown): unknown {
 function extractText(response: unknown): string {
   const value = unwrapResult(response);
   if (typeof value === "string") return value;
-  if (value && typeof value === "object") {
-    const record = value as Record<string, unknown>;
-    const keys = ["text", "content", "message", "output"];
-    for (const key of keys) {
-      const candidate = record[key];
-      if (typeof candidate === "string") return candidate;
+  if (!value || typeof value !== "object") return "";
+
+  const record = value as Record<string, unknown>;
+
+  // Handle content-block format: {type:"text", text:"..."} (top-level or nested)
+  if (record.type === "text" && typeof record.text === "string") {
+    return record.text;
+  }
+
+  const keys = ["text", "content", "message", "output"];
+  for (const key of keys) {
+    const candidate = record[key];
+    if (typeof candidate === "string") return candidate;
+    // Handle nested content block: {content: {type:"text", text:"..."}}
+    if (candidate && typeof candidate === "object") {
+      const nested = candidate as Record<string, unknown>;
+      if (nested.type === "text" && typeof nested.text === "string") return nested.text;
+      if (typeof nested.text === "string") return nested.text;
     }
   }
   return "";

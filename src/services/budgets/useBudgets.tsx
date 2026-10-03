@@ -100,6 +100,8 @@ export function BudgetsProvider({ children }: { children: ReactNode }) {
         const repo = await getBudgetRepository();
         const saved = await repo.upsert(input);
         dispatch({ type: "optimistic-upsert", budget: saved });
+        // Refresh from storage to ensure consistency
+        void load();
         return saved;
       } catch (error) {
         dispatch({ type: "rollback-restore", snapshot });
@@ -107,7 +109,7 @@ export function BudgetsProvider({ children }: { children: ReactNode }) {
         throw error;
       }
     },
-    [notify, state.budgets]
+    [notify, state.budgets, load]
   );
 
   const deleteBudget = useCallback(
@@ -117,13 +119,15 @@ export function BudgetsProvider({ children }: { children: ReactNode }) {
       try {
         const repo = await getBudgetRepository();
         await repo.remove(id);
+        // Refresh from storage to ensure consistency
+        void load();
       } catch (error) {
         dispatch({ type: "rollback-restore", snapshot });
         notify(friendly(error), "error");
         throw error;
       }
     },
-    [notify, state.budgets]
+    [notify, state.budgets, load]
   );
 
   const value = useMemo<BudgetsContextValue>(() => {
