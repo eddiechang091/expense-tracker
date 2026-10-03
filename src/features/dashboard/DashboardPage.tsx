@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useMemo } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -59,12 +59,19 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
   const comparison = comparePeriods(expenses, now);
   const catTotals = totalsByCategory(monthExpenses);
   const chartData = dailyTotals(monthExpenses, now);
-  const recentExpenses = sortExpensesByRecency(monthExpenses).slice(0, 4);
   const previousMonthExpenses = comparison ? filterByMonth(expenses, comparison.previousKey) : [];
   const changes = detectMeaningfulChanges(monthExpenses, previousMonthExpenses, { maxResults: 3 });
 
-  // AI insight for the most recently added expense (only triggers when expense id changes)
-  const latestExpense = sortExpensesByRecency(monthExpenses)[0] ?? null;
+  // AI insight — triggered by the most recently added expense.
+  // Memoize by ID to avoid re-firing on every render when the same expense
+  // is returned as a new object reference (e.g. after expenses array refresh).
+  const recentExpenses = sortExpensesByRecency(monthExpenses).slice(0, 4);
+  const latestExpenseRef = sortExpensesByRecency(monthExpenses)[0] ?? null;
+  const latestExpense = useMemo(
+    () => latestExpenseRef,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [latestExpenseRef?.id]
+  );
   const insight = useInsight(latestExpense, expenses, budgets);
 
   if (isLoading) {
@@ -157,8 +164,10 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
         </Card>
       ) : null}
 
-      {/* AI insight for the most recent expense (hidden in standalone/no-LLM) */}
-      <AIInsightCard status={insight.status} result={insight.result} />
+      {/* AI insight — show while loading + when ready with a real response */}
+      {insight.status === "loading" || (insight.status === "ready" && insight.result && !insight.result.isFallback) ? (
+        <AIInsightCard status={insight.status} result={insight.result} />
+      ) : null}
 
       {/* Prompt to set a budget if none exists */}
       {!monthlyBudget && monthExpenses.length > 0 ? (
