@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
 import { Button } from "@/components/ui/Button";
 
@@ -18,10 +18,20 @@ export function ChatComposer({
   const [text, setText] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  // Auto-grow textarea up to 120px
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+  }, [text]);
+
   function submit(value: string) {
     const trimmed = value.trim();
     if (!trimmed || sending || disabled) return;
     setText("");
+    // Reset height after clearing
+    if (inputRef.current) inputRef.current.style.height = "auto";
     onSend(trimmed);
     inputRef.current?.focus();
   }
@@ -75,7 +85,7 @@ export function ChatComposer({
           type="submit"
           size="sm"
           disabled={sending || disabled || text.trim().length === 0}
-          aria-label="Send message"
+          aria-label={sending ? "Sending…" : "Send message"}
         >
           {sending ? "…" : "Send"}
         </Button>
@@ -83,3 +93,4 @@ export function ChatComposer({
     </div>
   );
 }
+

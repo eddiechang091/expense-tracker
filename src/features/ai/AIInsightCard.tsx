@@ -1,7 +1,10 @@
 import type { InsightResult } from "@/lib/aiSchema";
 import { LoadingState } from "@/components/ui/States";
+import { ReadAloudButton } from "@/components/ui/ReadAloudButton";
+import { resultToReadableText } from "./MessageBubble";
 
 function InsightContent({ result }: { result: InsightResult }) {
+  const readableText = result.isFallback ? "" : resultToReadableText(result);
   return (
     <div className="ai-insight">
       {result.isFallback ? (
@@ -23,6 +26,11 @@ function InsightContent({ result }: { result: InsightResult }) {
           ) : null}
         </>
       )}
+      {readableText ? (
+        <div className="ai-insight-tts">
+          <ReadAloudButton text={readableText} />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -52,3 +60,4 @@ export function AIInsightCard({
     </div>
   );
 }
+

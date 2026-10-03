@@ -1,5 +1,19 @@
 import type { ConversationMessage } from "./conversationTypes";
 import type { InsightResult } from "@/lib/aiSchema";
+import { ReadAloudButton } from "@/components/ui/ReadAloudButton";
+
+export function resultToReadableText(result: InsightResult): string {
+  return [
+    result.headline,
+    result.smallTalk,
+    result.context,
+    result.financialObservation,
+    result.suggestion,
+    result.followUpQuestion,
+  ]
+    .filter(Boolean)
+    .join(". ");
+}
 
 function AIContent({ result }: { result: InsightResult }) {
   if (result.isFallback) {
@@ -35,6 +49,11 @@ function TypingBubble() {
 
 export function MessageBubble({ message }: { message: ConversationMessage }) {
   const isUser = message.role === "user";
+  const readableText =
+    !isUser && message.result && !message.result.isFallback
+      ? resultToReadableText(message.result)
+      : "";
+
   return (
     <div className={`bubble-row ${isUser ? "bubble-row--user" : "bubble-row--ai"}`}>
       {!isUser ? (
@@ -51,9 +70,15 @@ export function MessageBubble({ message }: { message: ConversationMessage }) {
         ) : (
           <p className="bubble-text">{message.text}</p>
         )}
+        {readableText ? (
+          <div className="bubble-tts-row">
+            <ReadAloudButton text={readableText} />
+          </div>
+        ) : null}
       </div>
     </div>
   );
 }
 
 export { TypingBubble };
+

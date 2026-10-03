@@ -587,3 +587,111 @@ a:hover { text-decoration: underline; }
 }
 .composer-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
 .composer-input::placeholder { color: var(--text-muted); }
+
+/* ─── Phase 6: Read Aloud ─────────────────────────────────────────────────── */
+.read-aloud-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex: none;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.read-aloud-btn:hover {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+.read-aloud-btn.is-speaking {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-color: var(--primary);
+  animation: tts-pulse 1.6s ease-in-out infinite;
+}
+@keyframes tts-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 30%, transparent); }
+  50%       { box-shadow: 0 0 0 5px color-mix(in srgb, var(--primary) 0%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .read-aloud-btn.is-speaking { animation: none; }
+}
+
+/* TTS row inside a bubble */
+.bubble-tts-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+/* TTS row inside the insight card */
+.ai-insight-tts {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+/* ─── Phase 6: Dashboard UX polish ──────────────────────────────────────── */
+.dashboard-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dashboard-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.dashboard-total {
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.dashboard-comparison {
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+/* ─── Phase 6: Expense UX polish ─────────────────────────────────────────── */
+.expense-item {
+  animation: item-in var(--dur-normal) var(--ease) both;
+}
+@keyframes item-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .expense-item { animation: none; }
+}
+
+.saving-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-soft);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+}
+
+/* ─── Phase 6: Accessibility / focus polish ──────────────────────────────── */
+/* Ensure all interactive elements in bubbles get visible focus */
+.bubble button:focus-visible,
+.ai-insight-card button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-pill);
+}
