@@ -112,7 +112,11 @@ class LocalStore implements KvStore {
 
   async set<T>(key: string, value: T): Promise<void> {
     return enqueue(async () => {
-      this.write(withPrefix(key), JSON.stringify(value));
+      const payload = JSON.stringify(value);
+      if (payload.length > MAX_VALUE_BYTES) {
+        console.warn("[storage] value exceeds the safe Anna Storage size: " + key);
+      }
+      this.write(withPrefix(key), payload);
     });
   }
 
@@ -127,6 +131,41 @@ class LocalStore implements KvStore {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Direct localStorage helpers — used by AnnaStore to mirror writes without
+// going through the enqueue chain (calling enqueue inside an enqueue callback
+// deadlocks because the inner call waits for the outer to finish).
+// ---------------------------------------------------------------------------
+function lsWrite(key: string, payload: string): void {
+  const ls = safeLocalStorage();
+  if (!ls) return;
+  try {
+    ls.setItem(key, payload);
+  } catch {
+    // quota or security error — mirror is best-effort
+  }
+}
+
+function lsRead(key: string): string | null {
+  const ls = safeLocalStorage();
+  if (!ls) return null;
+  try {
+    return ls.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function lsRemove(key: string): void {
+  const ls = safeLocalStorage();
+  if (!ls) return;
+  try {
+    ls.removeItem(key);
+  } catch {
+    // best-effort
+  }
+}
+
 class AnnaStore implements KvStore {
   readonly kind = "anna" as const;
 
@@ -134,7 +173,11 @@ class AnnaStore implements KvStore {
 
   async get<T>(key: string): Promise<T | null> {
     const res = await this.client.storage?.get?.({ key: withPrefix(key) });
-    return decode<T>(res);
+    const value = decode<T>(res);
+    if (value !== null && value !== undefined) return value;
+    // Anna returned null (e.g. dev harness after reload) — fall back to
+    // the localStorage mirror written during the last set().
+    return decode<T>(lsRead(withPrefix(key)));
   }
 
   async set<T>(key: string, value: T): Promise<void> {
@@ -144,12 +187,16 @@ class AnnaStore implements KvStore {
         console.warn("[storage] value exceeds the safe Anna Storage size: " + key);
       }
       await this.client.storage?.set?.({ key: withPrefix(key), value: payload });
+      // Mirror to localStorage so data survives a dev-harness reload.
+      // This is a direct write, NOT through enqueue, to avoid deadlocking.
+      lsWrite(withPrefix(key), payload);
     });
   }
 
   async remove(key: string): Promise<void> {
     return enqueue(async () => {
       await this.client.storage?.delete?.({ key: withPrefix(key) });
+      lsRemove(withPrefix(key));
     });
   }
 
