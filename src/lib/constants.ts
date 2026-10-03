@@ -11,6 +11,7 @@ export const STORAGE_KEYS = {
   categoriesIndex: "categories:index",
   budgetsIndex: "budgets:index",
   budget: (id: string) => `budgets:item:${id}`,
+  conversationActive: "conversations:active",
 } as const;
 
 export const DEFAULT_CATEGORIES: Category[] = [
