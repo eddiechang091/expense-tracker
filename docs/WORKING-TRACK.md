@@ -5,6 +5,33 @@ Newest entries first. Times in America/Halifax.
 
 ---
 
+## 2026-10-05 14:30 — fix/tts-health-invoke-dispatch → PR #13 (open, awaiting review)
+
+**User report.** After rebuilding with #10 merged, console still shows
+`api_key forwarded: true, executa key configured: unknown`, and Fish
+returns 401.
+
+**Two separate issues:**
+
+1. **My bug:** the Anna host routes every tool call as `tools.invoke`
+   with the method name in `params.name`. The Executa's invoke dispatcher
+   only knew `synthesize`/`get_chunk`, so the frontend's health check got
+   `[-32601] Unknown invoke method: 'health'` → health unknown → key
+   forwarded (safe default). Fixed by extracting `_health_payload()` and
+   serving it from the invoke dispatcher too. Verified locally: invoke
+   health / direct health / unknown-method paths all correct.
+2. **The 401:** I tested the pasted key directly against Fish Audio —
+   `401 {"status":401,"message":"Invalid Token"}`. The pasted string
+   itself is invalid (the `--` segment looks redacted). The harness got
+   401 with the real stored key too, so the user must verify/regenerate
+   the real key at fish.audio and update Settings and/or the Executa
+   `.env`.
+
+**Verification:** local protocol test (3 paths); no frontend change
+needed (`unwrapToRecord` already handles both health shapes).
+
+---
+
 ## 2026-10-05 14:05 — PR #11 MERGED, PR #10 MERGED (main at a8cd754)
 
 User merged both. Local main fast-forwarded to `a8cd754`; local branches
