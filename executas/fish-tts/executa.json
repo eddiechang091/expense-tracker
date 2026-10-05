@@ -1,0 +1,19 @@
+{
+  "slug": "fish-tts",
+  "name": "Fish Audio TTS",
+  "version": "1.0.0",
+  "executa_type": "tool",
+  "tool_id": "tool-dev-fish-tts",
+  "type": "python",
+  "distribution": {
+    "active": "local",
+    "profiles": {
+      "local": {
+        "type": "local",
+        "package_name": "tool-dev-fish-tts",
+        "executable_name": "tool-dev-fish-tts",
+        "supports_protocol": true
+      }
+    }
+  }
+}
