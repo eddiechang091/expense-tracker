@@ -59,8 +59,13 @@ def _load_env_file() -> None:
     - Does not override variables already set in the environment.
     - Strips inline comments and surrounding quotes.
     - Fails silently so missing .env never crashes the process.
+    - When frozen (PyInstaller onefile), __file__ points at the temp
+      extraction dir, so resolve relative to the real binary instead.
     """
-    env_path = Path(__file__).parent.parent / ".env"
+    if getattr(sys, "frozen", False):
+        env_path = Path(sys.executable).parent / ".env"
+    else:
+        env_path = Path(__file__).parent.parent / ".env"
     api_key_present_before = bool(os.environ.get("FISH_AUDIO_API_KEY", "").strip())
     loaded = False
     try:
