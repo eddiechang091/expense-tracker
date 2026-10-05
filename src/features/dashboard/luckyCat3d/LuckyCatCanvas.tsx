@@ -18,17 +18,14 @@ export interface LuckyCatCanvasApi {
 
 interface LuckyCatCanvasProps {
   speaking: boolean;
-  onActivate: () => void;
 }
 
 const LuckyCatCanvas = forwardRef<LuckyCatCanvasApi, LuckyCatCanvasProps>(
-  function LuckyCatCanvas({ speaking, onActivate }, ref) {
+  function LuckyCatCanvas({ speaking }, ref) {
     const mountRef = useRef<HTMLDivElement>(null);
     const apiRef = useRef<LuckyCatCanvasApi | null>(null);
     const speakingRef = useRef(speaking);
     speakingRef.current = speaking;
-    const activateRef = useRef(onActivate);
-    activateRef.current = onActivate;
 
     useImperativeHandle(
       ref,
@@ -68,7 +65,6 @@ const LuckyCatCanvas = forwardRef<LuckyCatCanvasApi, LuckyCatCanvasProps>(
 
       const rig: LuckyCatRig = buildLuckyCat();
       scene.add(rig.group);
-      const raycaster = new THREE.Raycaster();
 
       const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 3 };
 
@@ -172,22 +168,10 @@ const LuckyCatCanvas = forwardRef<LuckyCatCanvasApi, LuckyCatCanvasProps>(
         if (document.hidden) pause();
         else resume();
       };
-      const onCanvasDown = (e: PointerEvent) => {
-        const r = renderer.domElement.getBoundingClientRect();
-        const ndc = new THREE.Vector2(
-          ((e.clientX - r.left) / r.width) * 2 - 1,
-          -((e.clientY - r.top) / r.height) * 2 + 1
-        );
-        raycaster.setFromCamera(ndc, camera);
-        if (raycaster.intersectObject(rig.group, true).length > 0) {
-          activateRef.current();
-        }
-      };
 
       window.addEventListener("pointermove", onMove, { passive: true });
       window.addEventListener("scroll", onScroll, { passive: true });
       document.addEventListener("visibilitychange", onVis);
-      renderer.domElement.addEventListener("pointerdown", onCanvasDown);
 
       st.raf = requestAnimationFrame(loop);
 
@@ -196,7 +180,6 @@ const LuckyCatCanvas = forwardRef<LuckyCatCanvasApi, LuckyCatCanvasProps>(
         window.removeEventListener("pointermove", onMove);
         window.removeEventListener("scroll", onScroll);
         document.removeEventListener("visibilitychange", onVis);
-        renderer.domElement.removeEventListener("pointerdown", onCanvasDown);
         rig.group.traverse((o) => {
           const mesh = o as THREE.Mesh;
           if (mesh.geometry) mesh.geometry.dispose();

@@ -162,7 +162,7 @@ export function MoneyBuddyLuckyCat({ insightResult }: MoneyBuddyLuckyCatProps) {
           className="lucky-cat-3d-stage"
         >
           <Suspense fallback={<CatFallback />}>
-            <LuckyCatCanvas ref={canvasApiRef} speaking={false} onActivate={handleActivate} />
+            <LuckyCatCanvas ref={canvasApiRef} speaking={false} />
           </Suspense>
         </div>
       </div>
@@ -182,7 +182,7 @@ export function MoneyBuddyLuckyCat({ insightResult }: MoneyBuddyLuckyCatProps) {
         className={`lucky-cat-3d-stage${isSpeaking ? " is-speaking" : ""}${!hasResult ? " is-waiting" : ""}`}
       >
         <Suspense fallback={<CatFallback />}>
-          <LuckyCatCanvas ref={canvasApiRef} speaking={isSpeaking} onActivate={handleActivate} />
+          <LuckyCatCanvas ref={canvasApiRef} speaking={isSpeaking} />
         </Suspense>
       </div>
     </div>
