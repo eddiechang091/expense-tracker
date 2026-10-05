@@ -214,7 +214,97 @@ def synthesize(params: dict) -> dict:
     print(f"[fish-tts] audio bytes: {len(resp.content)}", file=sys.stderr, flush=True)
 
     audio_b64 = base64.b64encode(resp.content).decode()
-    return {"success": True, "data": {"audio_base64": audio_b64, "format": fmt}}
+    return _chunked_audio_response(audio_b64, fmt)
+
+
+# ---------------------------------------------------------------------------
+# Chunked audio transfer
+#
+# The local harness cannot reliably read a single stdout JSON line much
+# larger than ~64 KB (empirically: a ~41 KB response works, a ~135 KB
+# response kills the Executa with "executa process exited"). Audio larger
+# than CHUNK_SIZE_B64 base64 chars is therefore split into numbered chunks;
+# the frontend fetches chunk 0 from the synthesize response and the rest
+# via the get_chunk method, then reassembles.
+# ---------------------------------------------------------------------------
+
+# Base64 chars per chunk — keeps each JSON response line around ~50 KB,
+# safely under the harness pipe-read limit.
+CHUNK_SIZE_B64 = 48 * 1024
+
+# In-memory chunk sessions: token -> {"audio_b64": str, "format": str}.
+# Bounded so abandoned sessions (client gave up mid-transfer) cannot grow
+# without limit in a long-running process.
+_chunk_sessions: dict = {}
+_MAX_CHUNK_SESSIONS = 8
+
+
+def _chunked_audio_response(audio_b64: str, fmt: str) -> dict:
+    """Wrap base64 audio in a (possibly chunked) success response."""
+    total = (len(audio_b64) + CHUNK_SIZE_B64 - 1) // CHUNK_SIZE_B64
+    if total <= 1:
+        return {
+            "success": True,
+            "data": {
+                "audio_base64": audio_b64,
+                "format": fmt,
+                "total_chunks": 1,
+                "chunk_index": 0,
+            },
+        }
+    import uuid as _uuid
+
+    # Evict oldest sessions when bounded.
+    while len(_chunk_sessions) >= _MAX_CHUNK_SESSIONS:
+        _chunk_sessions.pop(next(iter(_chunk_sessions)))
+    token = _uuid.uuid4().hex
+    _chunk_sessions[token] = {"audio_b64": audio_b64, "format": fmt}
+    print(
+        f"[fish-tts] chunked response: {len(audio_b64)} b64 chars in "
+        f"{total} chunks, token={token[:8]}…",
+        file=sys.stderr,
+        flush=True,
+    )
+    return {
+        "success": True,
+        "data": {
+            "token": token,
+            "audio_base64": audio_b64[:CHUNK_SIZE_B64],
+            "format": fmt,
+            "total_chunks": total,
+            "chunk_index": 0,
+        },
+    }
+
+
+def get_chunk(params: dict) -> dict:
+    """Return one numbered chunk of a previous chunked synthesize response."""
+    token = (params.get("token") or "").strip()
+    try:
+        index = int(params.get("chunk_index", -1))
+    except (TypeError, ValueError):
+        index = -1
+    session = _chunk_sessions.get(token)
+    if not session:
+        return {"success": False, "error": "CHUNK_UNKNOWN_TOKEN: unknown or expired audio token."}
+    audio_b64 = session["audio_b64"]
+    total = (len(audio_b64) + CHUNK_SIZE_B64 - 1) // CHUNK_SIZE_B64
+    if not 0 <= index < total:
+        return {"success": False, "error": f"CHUNK_BAD_INDEX: index {index} out of {total}."}
+    chunk = audio_b64[index * CHUNK_SIZE_B64 : (index + 1) * CHUNK_SIZE_B64]
+    if index == total - 1:
+        # Last chunk delivered — free the session.
+        del _chunk_sessions[token]
+    return {
+        "success": True,
+        "data": {
+            "token": token,
+            "audio_base64": chunk,
+            "format": session["format"],
+            "total_chunks": total,
+            "chunk_index": index,
+        },
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -228,14 +318,22 @@ DESCRIBE_MANIFEST = {
     "tools": [
         {
             "name": "synthesize",
-            "description": "Convert text to speech via Fish Audio. Returns base64-encoded audio.",
+            "description": "Convert text to speech via Fish Audio. Returns base64-encoded audio, chunked when large (see get_chunk).",
             "parameters": [
                 {"name": "text", "type": "string", "required": True},
                 {"name": "voice_reference_id", "type": "string", "required": False},
                 {"name": "format", "type": "string", "required": False},
                 {"name": "api_key", "type": "string", "required": False},
             ],
-        }
+        },
+        {
+            "name": "get_chunk",
+            "description": "Fetch chunk N of a chunked synthesize response.",
+            "parameters": [
+                {"name": "token", "type": "string", "required": True},
+                {"name": "chunk_index", "type": "integer", "required": True},
+            ],
+        },
     ],
 }
 
@@ -309,6 +407,9 @@ def handle(req: dict) -> None:
         if tool_method == "synthesize":
             result = synthesize(args)
             send_result(req_id, result)
+        elif tool_method == "get_chunk":
+            result = get_chunk(args if isinstance(args, dict) else {})
+            send_result(req_id, result)
         else:
             send_error(req_id, -32601, f"Unknown invoke method: {tool_method!r}")
 
@@ -319,6 +420,13 @@ def handle(req: dict) -> None:
         if "args" in args and isinstance(args["args"], dict):
             args = args["args"]
         result = synthesize(args)
+        send_result(req_id, result)
+
+    elif method == "get_chunk":
+        args = params.get("args") or params or {}
+        if "args" in args and isinstance(args["args"], dict):
+            args = args["args"]
+        result = get_chunk(args if isinstance(args, dict) else {})
         send_result(req_id, result)
 
     elif method == "shutdown":
