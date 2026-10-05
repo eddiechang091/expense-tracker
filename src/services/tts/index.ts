@@ -1,4 +1,4 @@
-import { fishSpeak, isFishAvailable, type FishAudioResult } from "./providers/fish";
+import { fishSpeak, isFishAvailable, type FishSpeakResult } from "./providers/fish";
 import {
   browserSpeak,
   isBrowserTTSSupported,
@@ -11,6 +11,7 @@ export type TTSState =
   | { status: "loading"; provider: null }
   | { status: "speaking"; provider: TTSProvider }
   | { status: "stopped"; provider: null }
+  | { status: "awaiting-confirmation"; provider: null; message: string }
   | { status: "error"; provider: null; message: string };
 
 export type TTSStateListener = (state: TTSState) => void;
@@ -111,7 +112,7 @@ function mimeForFormat(format: string): string {
 
 /** Play Fish audio bytes through an HTMLAudioElement. */
 async function playFishAudio(
-  fish: FishAudioResult,
+  fish: { audio: ArrayBuffer; format: string },
   current: number
 ): Promise<boolean> {
   const blob = new Blob([fish.audio], { type: mimeForFormat(fish.format) });
@@ -165,52 +166,23 @@ async function playFishAudio(
 }
 
 /**
- * Speak `text` using Fish Audio (via the fish-tts Executa) with the system
- * voice as the automatic default/fallback.
- *
- * Flow:
- *   1. stop any current playback
- *   2. try Fish Audio when the Anna host exposes tools.invoke
- *   3. if Fish is unavailable or fails → browser SpeechSynthesis
- *      (soft-female default voice, zero configuration needed)
- *   4. if both fail → emit error state
+ * Speak `text` using the system voice directly (zero-config default).
+ * Used when no Fish key is configured anywhere, and after the user
+ * confirms the fallback when Fish was configured but failed.
  */
-export async function speak(
+export function speakBrowserVoice(
   text: string,
   listeners: Set<TTSStateListener>
-): Promise<void> {
+): void {
   activeListeners = listeners;
   stopAll();
-  // stopAll() bumped the epoch; re-anchor so THIS speak's own async
-  // continuations below are the valid generation.
   const current = epoch;
   if (!text.trim()) return;
-
   broadcast({ status: "loading", provider: null });
+  startBrowserVoice(text, current);
+}
 
-  // --- Attempt Fish Audio (Executa, server-side: no CORS involved) ---
-  let fish: FishAudioResult | null = null;
-  try {
-    if (await isFishAvailable()) {
-      fish = await fishSpeak(text);
-    }
-  } catch (err) {
-    console.warn("[TTS] fishSpeak threw unexpectedly:", err);
-    fish = null;
-  }
-
-  if (fish) {
-    if (current !== epoch) return; // stopped while Fish was synthesizing
-    const played = await playFishAudio(fish, current);
-    if (played) return;
-    // Audio element failed — fall through to the browser voice.
-    if (current !== epoch) return;
-    console.log("[TTS] Fish playback failed — falling back to browser voice");
-  } else {
-    console.log("[TTS] Fish unavailable — using browser voice (default)");
-  }
-
-  // --- Browser SpeechSynthesis: the zero-config default voice ---
+function startBrowserVoice(text: string, current: number): void {
   if (current !== epoch) return;
   if (!isBrowserTTSSupported()) {
     broadcast({
@@ -221,6 +193,7 @@ export async function speak(
     return;
   }
 
+  console.log("[TTS] using system voice");
   const cleanup = browserSpeak(text, () => {
     if (current !== epoch) return;
     activeBrowserCleanup = null;
@@ -236,6 +209,89 @@ export async function speak(
   }
   activeBrowserCleanup = cleanup;
   broadcast({ status: "speaking", provider: "browser" });
+}
+
+/**
+ * Speak `text` using Fish Audio (via the fish-tts Executa).
+ *
+ * Policy (user-confirmed):
+ * - Fish is attempted whenever the Anna host exposes tools.invoke.
+ * - If Fish was never configured (no key anywhere), the system voice is
+ *   the zero-config default — no confirmation needed.
+ * - If Fish was configured but FAILED (bad key, bad voice ID, no credits,
+ *   …), the system voice is NEVER used silently. Instead the UI is asked
+ *   to show the reason and confirm with the user first
+ *   (status "awaiting-confirmation").
+ *
+ * Flow:
+ *   1. stop any current playback
+ *   2. try Fish Audio
+ *   3a. success → play via HTMLAudioElement
+ *   3b. not configured → system voice directly
+ *   3c. configured but failed → awaiting-confirmation
+ */
+export async function speak(
+  text: string,
+  listeners: Set<TTSStateListener>
+): Promise<void> {
+  activeListeners = listeners;
+  stopAll();
+  // stopAll() bumped the epoch; re-anchor so THIS speak's own async
+  // continuations below are the valid generation.
+  const current = epoch;
+  if (!text.trim()) return;
+
+  broadcast({ status: "loading", provider: null });
+
+  // --- Attempt Fish Audio (Executa, server-side: no CORS involved) ---
+  if (await isFishAvailable()) {
+    let res: FishSpeakResult;
+    try {
+      res = await fishSpeak(text);
+    } catch (err) {
+      console.warn("[TTS] fishSpeak threw unexpectedly:", err);
+      res = {
+        ok: false,
+        code: "TRANSPORT_ERROR",
+        message: "Could not reach the voice service.",
+      };
+    }
+
+    if (res.ok) {
+      if (current !== epoch) return; // stopped while Fish was synthesizing
+      const played = await playFishAudio(res, current);
+      if (played) return;
+      // Audio bytes arrived but the element could not play them.
+      if (current !== epoch) return;
+      broadcast({
+        status: "awaiting-confirmation",
+        provider: null,
+        message: "Fish Audio returned audio, but this browser could not play it.",
+      });
+      return;
+    }
+
+    if (res.code === "NOT_CONFIGURED" || res.code === "NO_HOST") {
+      console.log("[TTS] Fish not configured — using default system voice");
+    } else {
+      // A key was configured but Fish failed: never fall back silently.
+      // The Lucky Cat tells the user why and asks whether to continue
+      // with the system voice.
+      console.warn("[TTS] Fish failed (" + res.code + ") — awaiting user confirmation");
+      if (current !== epoch) return;
+      broadcast({
+        status: "awaiting-confirmation",
+        provider: null,
+        message: res.message,
+      });
+      return;
+    }
+  } else {
+    console.log("[TTS] Fish unavailable (standalone) — using default system voice");
+  }
+
+  // --- System voice: the zero-config default ---
+  startBrowserVoice(text, current);
 }
 
 /** Whether TTS is likely available (sync browser check; Fish is async). */

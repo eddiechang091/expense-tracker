@@ -731,6 +731,59 @@ a:hover { text-decoration: underline; }
   border-color: var(--border);
   color: var(--text-muted);
 }
+/* Fish failure: the cat reports the problem and asks for confirmation
+   before using the system voice. */
+.cat-bubble--error {
+  background: #fff7ed;
+  border-color: #f59e0b;
+  color: #92400e;
+  max-width: 34ch;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-radius: 16px;
+  padding: 10px 16px;
+}
+.cat-bubble-error-title {
+  font-weight: 700;
+}
+.cat-bubble-error-detail {
+  font-weight: 400;
+  color: #b45309;
+}
+.cat-bubble-confirm-q {
+  font-weight: 600;
+  margin-top: 2px;
+}
+.cat-bubble-confirm-btns {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 2px;
+}
+.cat-confirm-btn {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+.cat-confirm-btn--primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.cat-confirm-btn:hover {
+  filter: brightness(0.96);
+}
+.cat-confirm-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
 @keyframes bubble-pulse {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.65; }

@@ -5,6 +5,47 @@ Newest entries first. Times in America/Halifax.
 
 ---
 
+## 2026-10-05 12:45 — fix/tts-fish-failure-confirmation → PR #9 (open, awaiting review)
+
+**User report.** API key is set and saved in Settings, but the Lucky Cat
+still used the system voice. User requirement: when a key is configured,
+Fish must be the only path — never fall back to system silently. If the
+key or voice ID is bad, the cat itself must tell the user, then pop a
+bubble asking whether to continue with the system voice.
+
+**Fix (6 atomic commits on branch `fix/tts-fish-failure-confirmation`):**
+
+- `2413961` refactor(tts): fishSpeak returns a discriminated FishSpeakResult —
+  `{ok: true, audio, format}` or `{ok: false, code, message}` with a
+  FishErrorCode (INVALID_KEY, NO_CREDITS, BAD_REQUEST, …) and a user-facing
+  message, instead of null.
+- `36907ba` feat(tts): ask before falling back when configured Fish fails —
+  new `speak()` policy: Fish attempted whenever the host exposes
+  tools.invoke; NOT_CONFIGURED → system voice directly (zero-config
+  default); any other Fish failure → broadcast `awaiting-confirmation`
+  with the reason. New `speakBrowserVoice()` for the confirmed path.
+- `082864f` feat(tts): expose speakWithSystemVoice on the useTTS hook.
+- `7da7f61` feat(ui): Lucky Cat asks before using the system voice —
+  error bubble shows the failure reason + "Use system voice" / "Not now"
+  buttons; tapping the cat dismisses. New `.cat-bubble--error` styles.
+- `66bd71d` test(tts): update fishSpeak expectation for FishSpeakResult.
+- (this doc) working-track entry.
+
+**Behavior now:**
+- No key anywhere → system voice directly (unchanged default).
+- Key set + Fish works → Fish voice, never system.
+- Key set + Fish fails (bad key/voice, no credits, …) → cat bubble shows
+  the reason and asks "Continue with the system voice?" — system voice
+  only starts after the user taps "Use system voice".
+
+**Verification:** `vitest` 196/196, `tsc --noEmit` clean, `vite build` clean.
+
+**Note:** `scripts/fish-e2e-smoke.mjs` step 15 ("force Fish failure →
+automatic browser fallback") no longer matches the product behavior —
+the script needs updating to click through the confirmation bubble.
+
+---
+
 ## 2026-10-05 12:25 — fix/tts-default-system-voice → PR #8 (open, awaiting review)
 
 **Problem.** After the Phase 6.5 refactor, Money Buddy's Lucky Cat produced no
