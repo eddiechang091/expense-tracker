@@ -695,3 +695,114 @@ a:hover { text-decoration: underline; }
   outline-offset: 2px;
   border-radius: var(--radius-pill);
 }
+
+/* ─── Phase 6.5: Lucky Cat / Money Buddy Voice ───────────────────────────── */
+.lucky-cat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Speech bubble */
+.cat-bubble {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-pill);
+  padding: 6px 16px;
+  text-align: center;
+  max-width: 28ch;
+  overflow-wrap: anywhere;
+}
+.cat-bubble--speaking {
+  color: var(--primary-strong);
+  animation: bubble-pulse 1.4s ease-in-out infinite;
+}
+.cat-bubble--waiting {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+@keyframes bubble-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.65; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cat-bubble--speaking { animation: none; }
+}
+
+/* Cat interactive button */
+.lucky-cat-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius);
+  padding: 8px;
+  transition: transform var(--dur-fast) var(--ease);
+  animation: cat-idle 4s ease-in-out infinite;
+}
+.lucky-cat-btn:hover { transform: scale(1.05); }
+.lucky-cat-btn:active { transform: scale(0.97); }
+.lucky-cat-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+  border-radius: var(--radius);
+}
+.lucky-cat-btn.is-waiting { cursor: default; opacity: 0.75; }
+.lucky-cat-btn.is-speaking { animation: cat-speak 0.7s ease-in-out infinite alternate; }
+
+@keyframes cat-idle {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-4px); }
+}
+@keyframes cat-speak {
+  from { transform: rotate(-2deg) translateY(0); }
+  to   { transform: rotate(2deg) translateY(-3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lucky-cat-btn { animation: none; }
+  .lucky-cat-btn.is-speaking { animation: none; }
+  .lucky-cat-btn:hover { transform: none; }
+}
+
+/* SVG */
+.lucky-cat-svg {
+  width: 110px;
+  height: auto;
+  display: block;
+}
+
+/* Paw wave animation during speaking */
+.lucky-cat-svg .lucky-cat-paw {
+  transform-origin: 90px 85px;
+}
+.lucky-cat-svg.is-speaking .lucky-cat-paw {
+  animation: paw-wave 0.5s ease-in-out infinite alternate;
+}
+@keyframes paw-wave {
+  from { transform: rotate(-8deg); }
+  to   { transform: rotate(8deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lucky-cat-svg.is-speaking .lucky-cat-paw { animation: none; }
+}
+
+/* Glow ring */
+.lucky-cat-glow {
+  animation: glow-pulse 1.2s ease-in-out infinite;
+}
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.15; r: 32; }
+  50%       { opacity: 0.55; r: 36; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lucky-cat-glow { animation: none; opacity: 0.25; }
+}
