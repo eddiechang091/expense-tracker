@@ -22,7 +22,7 @@ import { sortExpensesByRecency } from "@/lib/categories";
 import { CategoryBreakdown } from "./CategoryBreakdown";
 import { RecentExpenses } from "./RecentExpenses";
 import { SpendingChanges } from "./SpendingChanges";
-import { AIInsightCard } from "@/features/ai/AIInsightCard";
+import { MoneyBuddyLuckyCat } from "./MoneyBuddyLuckyCat";
 import { useInsight } from "@/features/ai/useInsight";
 
 const SpendingChart = lazy(() => import("@/components/ui/SpendingChart"));
@@ -164,9 +164,13 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
         </Card>
       ) : null}
 
-      {/* AI insight — show while loading + when ready with a real response */}
-      {insight.status === "loading" || (insight.status === "ready" && insight.result && !insight.result.isFallback) ? (
-        <AIInsightCard status={insight.status} result={insight.result} />
+      {/* Money Buddy Lucky Cat — tap to hear the AI spending summary */}
+      {monthExpenses.length > 0 ? (
+        <MoneyBuddyLuckyCat
+          insightResult={
+            insight.status === "ready" ? (insight.result ?? null) : null
+          }
+        />
       ) : null}
 
       {/* Prompt to set a budget if none exists */}
