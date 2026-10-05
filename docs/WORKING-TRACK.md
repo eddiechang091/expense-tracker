@@ -5,6 +5,34 @@ Newest entries first. Times in America/Halifax.
 
 ---
 
+## 2026-10-05 15:10 — feat/lucky-cat-3d → PR #15 (open, awaiting review)
+
+**User request.** Make the Lucky Cat 3D like the BrightNest panda —
+very cute, no roaming, follows the scrollbar, only the signature
+beckoning-paw motion, head bubble on the panda's 5s/20s rhythm.
+
+**Implementation (5 atomic commits on branch `feat/lucky-cat-3d`):**
+
+- `chore`: added `three@^0.186.1` (+ `@types/three`).
+- `luckyCat3d/catModel.ts`: chibi maneki-neko from primitives — big
+  head, pink-inner ears, spark eyes, ω mouth, whiskers, blush, red
+  collar + swinging gold bell, raised beckoning paw with pink pads,
+  resting paw holding a koban coin, calico patches, sitting + tail.
+  Rig: head / eyes / body / waveArm / bell.
+- `luckyCat3d/LuckyCatCanvas.tsx`: wave (faster + bounce while
+  speaking), blink, breathing, cursor-following head, scroll lean.
+  Click raycast, reduced-motion + background-tab handling.
+- `MoneyBuddyLuckyCat.tsx`: fixed bottom-right overlay; idle bubble
+  above the head 5s/20s; speaking/waiting/error states unchanged.
+  TTS wiring untouched.
+- `global.css`: overlay + bubble styles; removed SVG button styles.
+
+**Verification:** model builds in Node (51 meshes, full rig);
+`vitest` 196/196, `tsc` clean, `vite build` clean with three.js in a
+separate lazy chunk (main bundle unchanged).
+
+---
+
 ## 2026-10-05 14:45 — PR #13 MERGED (main at b05d61e). Fish TTS verified working end-to-end.
 
 User test after merging #13: health returns `fish_configured: true`,
