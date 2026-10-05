@@ -117,7 +117,7 @@ export interface MoneyBuddyLuckyCatProps {
 }
 
 export function MoneyBuddyLuckyCat({ insightResult }: MoneyBuddyLuckyCatProps) {
-  const { speak, stop, isSpeaking } = useTTS();
+  const { speak, speakWithSystemVoice, stop, isSpeaking, state } = useTTS();
 
   const speechText =
     insightResult && !insightResult.isFallback
@@ -126,7 +126,13 @@ export function MoneyBuddyLuckyCat({ insightResult }: MoneyBuddyLuckyCatProps) {
       ? resultToSpeechText(insightResult) // fallback content is still speakable
       : "";
 
+  const awaitingConfirmation = state.status === "awaiting-confirmation";
+
   function handleActivate() {
+    if (awaitingConfirmation) {
+      stop(); // dismiss the confirmation
+      return;
+    }
     if (!speechText) return;
     if (isSpeaking) {
       stop();
@@ -143,11 +149,53 @@ export function MoneyBuddyLuckyCat({ insightResult }: MoneyBuddyLuckyCatProps) {
   }
 
   const hasResult = speechText.length > 0;
-  const ariaLabel = isSpeaking
+  const ariaLabel = awaitingConfirmation
+    ? "Money Buddy lucky cat — voice problem, tap to dismiss"
+    : isSpeaking
     ? "Money Buddy lucky cat — tap to stop"
     : hasResult
     ? "Money Buddy lucky cat — tap to hear your spending summary"
     : "Money Buddy lucky cat — still preparing your summary";
+
+  // Fish was configured but failed: the cat tells the user why and asks
+  // whether to continue with the system voice. The system voice is never
+  // used silently once a key is set.
+  if (awaitingConfirmation) {
+    return (
+      <div className="lucky-cat-card">
+        <div className="cat-bubble cat-bubble--error" role="alert">
+          <span className="cat-bubble-error-title">⚠️ My Fish voice ran into a problem</span>
+          <span className="cat-bubble-error-detail">{state.message}</span>
+          <span className="cat-bubble-confirm-q">Continue with the system voice?</span>
+          <span className="cat-bubble-confirm-btns">
+            <button
+              type="button"
+              className="cat-confirm-btn cat-confirm-btn--primary"
+              onClick={() => speakWithSystemVoice(speechText)}
+            >
+              Use system voice
+            </button>
+            <button
+              type="button"
+              className="cat-confirm-btn"
+              onClick={stop}
+            >
+              Not now
+            </button>
+          </span>
+        </div>
+        <button
+          type="button"
+          className="lucky-cat-btn"
+          aria-label={ariaLabel}
+          onClick={handleActivate}
+          onKeyDown={handleKeyDown}
+        >
+          <LuckyCatSVG speaking={false} />
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="lucky-cat-card">
