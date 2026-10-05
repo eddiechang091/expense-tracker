@@ -173,6 +173,9 @@ function base64ToArrayBuffer(b64: string): ArrayBuffer {
 interface AudioPayload {
   audio_base64: string;
   format?: string;
+  total_chunks?: number;
+  chunk_index?: number;
+  token?: string;
 }
 
 /**
@@ -192,10 +195,14 @@ function extractAudioPayload(raw: unknown): AudioPayload | null {
   for (const cand of candidates) {
     const r = cand as Record<string, unknown>;
     if (typeof r.audio_base64 === "string" && r.audio_base64.length > 0) {
-      return {
+      const payload: AudioPayload = {
         audio_base64: r.audio_base64,
-        format: typeof r.format === "string" ? r.format : undefined,
       };
+      if (typeof r.format === "string") payload.format = r.format;
+      if (typeof r.total_chunks === "number") payload.total_chunks = r.total_chunks;
+      if (typeof r.chunk_index === "number") payload.chunk_index = r.chunk_index;
+      if (typeof r.token === "string") payload.token = r.token;
+      return payload;
     }
   }
   return null;
@@ -273,9 +280,55 @@ export async function fishSpeak(text: string): Promise<FishSpeakResult> {
     return { ok: false, code: "INVALID_AUDIO", message: userMessageFor("INVALID_AUDIO", "") };
   }
 
+  // Chunked transfer: the harness cannot reliably read a single stdout
+  // JSON line much larger than ~64 KB, so the Executa splits big audio
+  // into numbered chunks. Fetch the rest and reassemble.
+  let fullB64 = payload.audio_base64;
+  const totalChunks =
+    typeof payload.total_chunks === "number" ? payload.total_chunks : 1;
+  if (totalChunks > 1) {
+    if (!payload.token) {
+      console.warn("[TTS:fish] chunked response without token");
+      return { ok: false, code: "INVALID_AUDIO", message: userMessageFor("INVALID_AUDIO", "") };
+    }
+    console.log(`[TTS:fish] fetching ${totalChunks - 1} more chunk(s)`);
+    const parts = [fullB64];
+    for (let i = 1; i < totalChunks; i++) {
+      let chunkRaw: unknown;
+      try {
+        chunkRaw = await invoke({
+          tool_id: toolId,
+          method: "get_chunk",
+          args: { token: payload.token, chunk_index: i },
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn(`[TTS:fish] get_chunk ${i} failed:`, msg);
+        return { ok: false, code: "TRANSPORT_ERROR", message: userMessageFor("TRANSPORT_ERROR", msg) };
+      }
+      if (
+        chunkRaw &&
+        typeof chunkRaw === "object" &&
+        (chunkRaw as Record<string, unknown>).success === false
+      ) {
+        const detail = String((chunkRaw as Record<string, unknown>).error ?? "");
+        console.warn(`[TTS:fish] get_chunk ${i} reported failure:`, detail.slice(0, 200));
+        return { ok: false, code: "TRANSPORT_ERROR", message: userMessageFor("TRANSPORT_ERROR", detail) };
+      }
+      const chunkPayload = extractAudioPayload(chunkRaw);
+      if (!chunkPayload) {
+        console.warn(`[TTS:fish] get_chunk ${i} returned no audio`);
+        return { ok: false, code: "INVALID_AUDIO", message: userMessageFor("INVALID_AUDIO", "") };
+      }
+      parts.push(chunkPayload.audio_base64);
+    }
+    fullB64 = parts.join("");
+    console.log("[TTS:fish] reassembled", parts.length, "chunks,", fullB64.length, "b64 chars");
+  }
+
   let buf: ArrayBuffer;
   try {
-    buf = base64ToArrayBuffer(payload.audio_base64);
+    buf = base64ToArrayBuffer(fullB64);
   } catch (err) {
     console.warn("[TTS:fish] base64 decode failed:", err instanceof Error ? err.message : err);
     return { ok: false, code: "INVALID_AUDIO", message: userMessageFor("INVALID_AUDIO", "") };
