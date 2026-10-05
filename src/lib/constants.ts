@@ -12,6 +12,9 @@ export const STORAGE_KEYS = {
   budgetsIndex: "budgets:index",
   budget: (id: string) => `budgets:item:${id}`,
   conversationActive: "conversations:active",
+  // Fish Audio TTS configuration — user-provided, not app secrets
+  fishApiKey: "settings:fish_api_key",
+  fishVoiceId: "settings:fish_voice_id",
 } as const;
 
 export const DEFAULT_CATEGORIES: Category[] = [
