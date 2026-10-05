@@ -2,12 +2,15 @@
 Fish Audio TTS Executa — Anna line-oriented JSON stdio protocol.
 
 Configuration (environment variables):
-  FISH_AUDIO_API_KEY         Required. Your Fish Audio API key.
+  FISH_AUDIO_API_KEY         Optional when the frontend passes api_key.
+                             Your Fish Audio API key.
   FISH_VOICE_REFERENCE_ID    Optional. Voice reference ID (voice preset).
   FISH_MODEL                 Optional. Model name (default: s2.1-pro-free).
   FISH_TTS_TIMEOUT_SEC       Optional. Request timeout in seconds (default: 30).
 
-The API key MUST NOT appear in any frontend source, bundle, or log.
+The API key MUST NOT appear in any frontend source, bundle, or log. It may
+arrive as the "api_key" invoke arg (forwarded from the app's Settings page);
+the Executa never logs its value, only a fingerprint.
 
 The Executa loads its .env file automatically from the same directory as
 this file at startup. See .env.example for the expected format.
@@ -128,11 +131,14 @@ def synthesize(params: dict) -> dict:
     """
     import requests  # Imported here so the module loads without the package installed
 
-    api_key = os.environ.get("FISH_AUDIO_API_KEY", "").strip()
+    # api_key may arrive as an invoke arg (forwarded from the app's Settings
+    # page via Anna Storage); otherwise fall back to env / .env.
+    api_key = (params.get("api_key") or os.environ.get("FISH_AUDIO_API_KEY", "")).strip()
+    api_key_source = "invoke-arg" if (params.get("api_key") or "").strip() else "env"
     if not api_key:
         return {
             "success": False,
-            "error": "FISH_NOT_CONFIGURED: Set FISH_AUDIO_API_KEY in executas/fish-tts/.env",
+            "error": "FISH_NOT_CONFIGURED: Set FISH_AUDIO_API_KEY in executas/fish-tts/.env or configure it in the app Settings.",
         }
 
     text = (params.get("text") or "").strip()
@@ -161,6 +167,7 @@ def synthesize(params: dict) -> dict:
         f"header-model={model} format={fmt} "
         f"reference_id_present={bool(voice_ref)} reference_id_length={len(voice_ref or '')} "
         f"reference_id_fingerprint={ref_fp} api_key_fingerprint={key_fp} "
+        f"api_key_source={api_key_source} "
         f"text_length={len(text)} body_keys={list(body.keys())}",
         file=sys.stderr, flush=True,
     )
@@ -226,6 +233,7 @@ DESCRIBE_MANIFEST = {
                 {"name": "text", "type": "string", "required": True},
                 {"name": "voice_reference_id", "type": "string", "required": False},
                 {"name": "format", "type": "string", "required": False},
+                {"name": "api_key", "type": "string", "required": False},
             ],
         }
     ],
