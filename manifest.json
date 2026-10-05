@@ -1,11 +1,13 @@
 {
   "schema": 2,
-  "permissions": ["llm.complete", "storage.read", "storage.write"],
+  "permissions": ["llm.complete", "storage.read", "storage.write", "tools.invoke"],
   "host_capabilities": ["llm.complete", "aps.kv"],
   "required_executas": [],
-  "optional_executas": [],
+  "optional_executas": [
+    { "tool_id": "bundled:fish-tts", "version": "latest" }
+  ],
   "ui": {
-    "bundle": { "format": "static-spa", "entry": "index.html", "external_origins": [] },
+    "bundle": { "format": "static-spa", "entry": "index.html", "external_origins": ["https://api.fish.audio"] },
     "views": [
       {
         "name": "main",
@@ -21,6 +23,7 @@
       }
     ],
     "host_api": {
+      "tools": ["optional:bundled:fish-tts"],
       "llm": ["complete"],
       "storage": ["get", "set", "delete", "list"],
       "window": ["set_title", "ready"]
