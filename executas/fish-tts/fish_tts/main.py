@@ -277,6 +277,16 @@ def _chunked_audio_response(audio_b64: str, fmt: str) -> dict:
     }
 
 
+def _health_payload() -> dict:
+    """Report readiness and whether a server-side API key is configured."""
+    configured = bool(os.environ.get("FISH_AUDIO_API_KEY", "").strip())
+    return {
+        "status": "ready",
+        "version": TOOL_VERSION,
+        "fish_configured": configured,
+    }
+
+
 def get_chunk(params: dict) -> dict:
     """Return one numbered chunk of a previous chunked synthesize response."""
     token = (params.get("token") or "").strip()
@@ -377,12 +387,7 @@ def handle(req: dict) -> None:
         send_result(req_id, DESCRIBE_MANIFEST)
 
     elif method == "health":
-        configured = bool(os.environ.get("FISH_AUDIO_API_KEY", "").strip())
-        send_result(req_id, {
-            "status": "ready",
-            "version": TOOL_VERSION,
-            "fish_configured": configured,
-        })
+        send_result(req_id, _health_payload())
 
     elif method == "invoke":
         # Anna host API format: {"method":"invoke","params":{"name":"synthesize","args":{...}}}
@@ -410,6 +415,10 @@ def handle(req: dict) -> None:
         elif tool_method == "get_chunk":
             result = get_chunk(args if isinstance(args, dict) else {})
             send_result(req_id, result)
+        elif tool_method == "health":
+            # The Anna host routes tool calls as tools.invoke, so health
+            # must be reachable here as well as via the direct method.
+            send_result(req_id, {"success": True, "data": _health_payload()})
         else:
             send_error(req_id, -32601, f"Unknown invoke method: {tool_method!r}")
 
