@@ -5,6 +5,14 @@ Newest entries first. Times in America/Halifax.
 
 ---
 
+## 2026-10-05 14:05 — PR #11 MERGED, PR #10 MERGED (main at a8cd754)
+
+User merged both. Local main fast-forwarded to `a8cd754`; local branches
+deleted. Next: user restarts the harness (Executa respawns with chunking
++ health-gated key forwarding) and re-tests the Lucky Cat voice.
+
+---
+
 ## 2026-10-05 13:20 — fix/tts-chunked-audio-transfer → PR #11 (open, awaiting review)
 
 **User report.** Executa installed and Fish API returns HTTP 200 with
@@ -37,7 +45,7 @@ restarted to respawn the process.
 
 ---
 
-## 2026-10-05 13:05 — fix/tts-minimize-key-exposure → PR #10 (open, awaiting review)
+## 2026-10-05 13:05 — fix/tts-minimize-key-exposure → PR #10 (MERGED 14:02)
 
 **User question.** After revoking a key that had appeared in plaintext in a
 pasted harness RPC log: is something wrong with encryption?
