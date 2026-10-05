@@ -1,34 +1,36 @@
 /**
- * Fish Audio TTS — calls api.fish.audio DIRECTLY from the browser.
+ * Fish Audio TTS — via the bundled fish-tts Executa (anna.tools.invoke).
  *
  * Architecture rationale:
- *   The Executa (stdout) approach is blocked by the local harness's ~64 KB
- *   internal pipe-read limit. MP3 audio base64-encoded always exceeds this.
- *   The browser fetch path avoids the Executa entirely: audio bytes stream
- *   directly from Fish Audio into the browser's memory.
+ *   The Executa calls api.fish.audio SERVER-SIDE, so the browser's CORS
+ *   policy never applies. (Fish Audio's gateway does not answer CORS
+ *   preflights — OPTIONS /v1/tts returns 404 with no
+ *   Access-Control-Allow-Origin — so a browser-direct fetch can never
+ *   succeed from inside the Anna iframe. Verified 2026-10-05.)
  *
  * Credential source (in priority order):
- *   1. VITE_FISH_AUDIO_API_KEY  — local .env for development (never committed)
- *   2. Anna Storage key          — user-entered via Settings page
+ *   1. api_key invoke arg — from VITE_FISH_AUDIO_API_KEY (local .env, dev)
+ *      or Anna Storage (user-entered via Settings page)
+ *   2. FISH_AUDIO_API_KEY env / executas/fish-tts/.env — read by the
+ *      Executa process itself (local harness / server deployments)
  *
- * For published apps: user enters their Fish Audio API key in Settings.
- * It is stored in Anna Storage (user-consented credential — this is their
- * own key for their own Fish Audio account, similar to how many AI apps
- * accept user-provided API keys).
- *
- * CORS: Fish Audio's api.fish.audio must allow the Anna iframe origin.
- *   If it returns CORS errors, the request fails and browser TTS is used.
- *   manifest.json declares https://api.fish.audio in external_origins.
+ * The API key never lands in the frontend bundle.
  */
 
-import { FISH_VOICE_REFERENCE_ID, FISH_AUDIO_FORMAT } from "../config";
+import { FISH_VOICE_REFERENCE_ID, getFishTtsToolId } from "../config";
+import { connectAnna } from "@/services/anna/runtime";
 import { getKvStore } from "@/services/anna/storage";
 import { STORAGE_KEYS } from "@/lib/constants";
 
-const FISH_API_ENDPOINT = "https://api.fish.audio/v1/tts";
-const FISH_MODEL = "s2.1-pro-free";
+/** Compact container — keeps the base64 payload small for the stdio pipe. */
+const FISH_FORMAT = "opus";
 
-/** Read Fish Audio API key from VITE env (dev) or Anna Storage (production). */
+export interface FishAudioResult {
+  audio: ArrayBuffer;
+  format: string;
+}
+
+/** Read Fish Audio API key from VITE env (dev) or Anna Storage (Settings). */
 async function getFishApiKey(): Promise<string> {
   // 1. Dev: VITE_FISH_AUDIO_API_KEY in local .env (never committed)
   const viteKey = import.meta.env.VITE_FISH_AUDIO_API_KEY ?? "";
@@ -44,7 +46,7 @@ async function getFishApiKey(): Promise<string> {
   }
 }
 
-/** Read Fish Audio voice ID from VITE env or Anna Storage. */
+/** Read Fish Audio voice ID from VITE env, the compiled constant, or Anna Storage. */
 async function getFishVoiceId(): Promise<string> {
   // Prefer explicit VITE override, then the compiled constant, then storage
   const viteId = import.meta.env.VITE_FISH_VOICE_REFERENCE_ID ?? "";
@@ -59,73 +61,106 @@ async function getFishVoiceId(): Promise<string> {
   }
 }
 
+function base64ToArrayBuffer(b64: string): ArrayBuffer {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
+
+interface AudioPayload {
+  audio_base64: string;
+  format?: string;
+}
+
 /**
- * Call Fish Audio directly from the browser and return the audio bytes.
- * Returns null if the API key is missing, CORS fails, or the request errors.
+ * Unwrap the Executa result. The Anna host may hand back the plugin payload
+ * directly ({audio_base64, format}) or nested under data/result envelopes.
+ * A {success: false, error} shape means the Executa declined the request.
  */
-export async function fishSpeak(text: string): Promise<ArrayBuffer | null> {
+function extractAudioPayload(raw: unknown): AudioPayload | null {
+  if (!raw || typeof raw !== "object") return null;
+  const record = raw as Record<string, unknown>;
+  if (record.success === false) return null;
+  const candidates: unknown[] = [record];
+  for (const key of ["data", "result", "value"]) {
+    const nested = record[key];
+    if (nested && typeof nested === "object") candidates.push(nested);
+  }
+  for (const cand of candidates) {
+    const r = cand as Record<string, unknown>;
+    if (typeof r.audio_base64 === "string" && r.audio_base64.length > 0) {
+      return {
+        audio_base64: r.audio_base64,
+        format: typeof r.format === "string" ? r.format : undefined,
+      };
+    }
+  }
+  return null;
+}
+
+function describeRaw(raw: unknown): string {
+  try {
+    return JSON.stringify(raw).slice(0, 200);
+  } catch {
+    return String(raw).slice(0, 200);
+  }
+}
+
+/**
+ * Synthesize `text` via the fish-tts Executa and return the audio bytes.
+ * Returns null when the Anna host is unavailable, the Executa declines
+ * (e.g. no API key configured anywhere), or the payload is invalid.
+ */
+export async function fishSpeak(text: string): Promise<FishAudioResult | null> {
   if (!text.trim()) return null;
 
-  const apiKey = await getFishApiKey();
-  if (!apiKey) {
-    console.warn("[TTS:fish] No Fish Audio API key. Add VITE_FISH_AUDIO_API_KEY to .env or enter it in Settings.");
+  const runtime = await connectAnna();
+  const invoke = runtime.client?.tools?.invoke;
+  if (runtime.state !== "connected" || typeof invoke !== "function") {
+    console.warn("[TTS:fish] Anna tools.invoke unavailable (standalone mode) — skipping Fish.");
     return null;
   }
 
+  const apiKey = await getFishApiKey();
   const voiceId = await getFishVoiceId();
 
-  const body: Record<string, string> = {
-    text,
-    format: FISH_AUDIO_FORMAT,
-  };
-  if (voiceId) body.reference_id = voiceId;
+  const args: Record<string, string> = { text, format: FISH_FORMAT };
+  if (voiceId) args.voice_reference_id = voiceId;
+  // Passed through to the Executa; it falls back to its own env/.env.
+  // Never logged by either side.
+  if (apiKey) args.api_key = apiKey;
 
   console.log(
-    "[TTS:fish] calling Fish Audio directly",
+    "[TTS:fish] invoking fish-tts Executa",
+    "tool_id:", getFishTtsToolId(),
     "voice_id present:", !!voiceId,
-    "voice_id length:", voiceId.length,
+    "api_key present:", !!apiKey,
     "text length:", text.length,
-    "format:", FISH_AUDIO_FORMAT,
   );
 
-  let resp: Response;
+  let raw: unknown;
   try {
-    resp = await fetch(FISH_API_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "model": FISH_MODEL,
-      },
-      body: JSON.stringify(body),
-    });
+    raw = await invoke({ tool_id: getFishTtsToolId(), method: "synthesize", args });
   } catch (err) {
-    // CORS or network error
     const msg = err instanceof Error ? err.message : String(err);
-    console.warn("[TTS:fish] FISH_FETCH_FAILED:", msg);
+    console.warn("[TTS:fish] tools.invoke failed:", msg);
     return null;
   }
 
-  console.log("[TTS:fish] Fish HTTP status:", resp.status);
-
-  if (resp.status === 401) {
-    console.warn("[TTS:fish] FISH_HTTP_401: API key is invalid.");
-    return null;
-  }
-  if (resp.status === 402) {
-    console.warn("[TTS:fish] FISH_HTTP_402: Fish Audio account has no credits.");
-    return null;
-  }
-  if (resp.status === 403) {
-    console.warn("[TTS:fish] FISH_HTTP_403: access denied.");
-    return null;
-  }
-  if (!resp.ok) {
-    console.warn("[TTS:fish] FISH_HTTP_" + resp.status + ": unexpected error.");
+  const payload = extractAudioPayload(raw);
+  if (!payload) {
+    console.warn("[TTS:fish] Executa returned no audio:", describeRaw(raw));
     return null;
   }
 
-  const buf = await resp.arrayBuffer();
+  let buf: ArrayBuffer;
+  try {
+    buf = base64ToArrayBuffer(payload.audio_base64);
+  } catch (err) {
+    console.warn("[TTS:fish] base64 decode failed:", err instanceof Error ? err.message : err);
+    return null;
+  }
   console.log("[TTS:fish] audio bytes received:", buf.byteLength);
 
   if (buf.byteLength < 100) {
@@ -133,13 +168,16 @@ export async function fishSpeak(text: string): Promise<ArrayBuffer | null> {
     return null;
   }
 
-  return buf;
+  return { audio: buf, format: payload.format || FISH_FORMAT };
 }
 
-/** Whether the Fish TTS path is likely available (key exists). */
+/** Whether the Fish path can be attempted (Anna host with tools.invoke). */
 export async function isFishAvailable(): Promise<boolean> {
-  const key = await getFishApiKey();
-  return key.length > 0;
+  const runtime = await connectAnna();
+  return (
+    runtime.state === "connected" &&
+    typeof runtime.client?.tools?.invoke === "function"
+  );
 }
 
 /** Save the Fish Audio API key to Anna Storage (user-entered credential). */
@@ -161,4 +199,3 @@ export async function saveFishVoiceId(id: string): Promise<void> {
     await store.remove(STORAGE_KEYS.fishVoiceId);
   }
 }
-
