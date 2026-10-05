@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import {
   speak,
+  speakBrowserVoice,
   stopAll,
   subscribe,
   isTTSSupported,
@@ -13,6 +14,8 @@ export type { TTSState };
 export interface TTSControls {
   /** Start speaking; cancels any current playback first. */
   speak: (text: string) => void;
+  /** Speak via the system voice (used after the user confirms the fallback). */
+  speakWithSystemVoice: (text: string) => void;
   /** Stop all current playback. */
   stop: () => void;
   state: TTSState;
@@ -44,10 +47,18 @@ export function useTTS(): TTSControls {
     stopAll();
   }, []);
 
+  const speakWithSystemVoice = useCallback(
+    (text: string) => {
+      speakBrowserVoice(text, speakListeners);
+    },
+    [speakListeners]
+  );
+
   const isSpeaking = state.status === "speaking" || state.status === "loading";
 
   return {
     speak: startSpeaking,
+    speakWithSystemVoice,
     stop,
     state,
     isSpeaking,
