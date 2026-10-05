@@ -38,8 +38,10 @@ function FishAudioSettings() {
       <div className="stack" style={{ gap: 14 }}>
         <p className="muted" style={{ fontSize: 13 }}>
           Money Buddy uses Fish Audio for its voice. Enter your Fish Audio API key and a voice reference ID.
-          Your key is stored locally in Anna Storage — it never leaves your device.
+          The key is stored in Anna Storage and sent to the Fish voice service only when synthesizing speech
+          (it is skipped when the voice service already has its own key configured).
           Get a key at <a href="https://fish.audio" target="_blank" rel="noopener noreferrer">fish.audio</a>.
+          Note: on the local dev harness the key can appear in the harness RPC log — avoid sharing logs that contain it.
         </p>
         <div>
           <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 4 }}>

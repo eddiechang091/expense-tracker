@@ -5,6 +5,31 @@ Newest entries first. Times in America/Halifax.
 
 ---
 
+## 2026-10-05 13:05 — fix/tts-minimize-key-exposure → PR #10 (open, awaiting review)
+
+**User question.** After revoking a key that had appeared in plaintext in a
+pasted harness RPC log: is something wrong with encryption?
+
+**Answer.** No encryption bug: the HTTPS call to Fish Audio is TLS-encrypted.
+The plaintext appearance is because the frontend forwards the Settings API
+key as a `tools.invoke` arg, and the harness RPC log records full args
+without redaction. That forwarding was introduced in PR #8 to make the
+Settings key work; this change tightens it.
+
+**Fix (2 atomic commits on branch `fix/tts-minimize-key-exposure`):**
+
+- `fish.ts`: `fishSpeak()` now calls the Executa `health` method first; the
+  Settings key is forwarded only when the Executa reports no server-side
+  key (`fish_configured: false`) or when the health check itself fails
+  (safe default). A server-side key therefore never traverses RPC/logs.
+- `SettingsPage.tsx`: honest copy — the old "never leaves your device"
+  claim was wrong; the new copy states when the key is forwarded and warns
+  it can appear in the local harness RPC log.
+
+**Verification:** `vitest` 196/196, `tsc --noEmit` clean, `vite build` clean.
+
+---
+
 ## 2026-10-05 12:45 — fix/tts-fish-failure-confirmation → PR #9 (open, awaiting review)
 
 **User report.** API key is set and saved in Settings, but the Lucky Cat
