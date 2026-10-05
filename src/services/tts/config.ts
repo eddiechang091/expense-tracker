@@ -45,8 +45,3 @@ export function getFishTtsToolId(): string {
  */
 export const FISH_VOICE_REFERENCE_ID: string =
   import.meta.env.VITE_FISH_VOICE_REFERENCE_ID ?? "";
-
-/** Fish Audio output format. MP3 is universally supported in browsers
- * and is the safest choice for HTMLAudioElement playback in iframes.
- */
-export const FISH_AUDIO_FORMAT = "mp3" as const;
