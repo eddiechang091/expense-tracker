@@ -5,6 +5,25 @@ Newest entries first. Times in America/Halifax.
 
 ---
 
+## 2026-10-05 15:55 — fix/lucky-cat-double-trigger → PR #16 (open, awaiting review)
+
+**User report.** After merging #15, tapping the 3D cat fetched Fish
+audio but never played it.
+
+**Root cause.** The 3D version had two click paths: canvas `pointerdown`
+raycast → `speak()`, then the wrapper div's `click` fired right after —
+and since `isSpeaking` is true while loading, it called `stop()`. Every
+tap was speak-then-instant-stop; the epoch guard discarded the audio.
+
+**Fix (1 commit on branch `fix/lucky-cat-double-trigger`,
+cherry-picked from the post-merge push to the deleted #15 branch):**
+removed the raycast/`onActivate` path; single `onClick` on the stage
+div, like the 2D version.
+
+**Verification:** `tsc` clean, `vitest` 196/196.
+
+---
+
 ## 2026-10-05 15:10 — feat/lucky-cat-3d → PR #15 (open, awaiting review)
 
 **User request.** Make the Lucky Cat 3D like the BrightNest panda —
