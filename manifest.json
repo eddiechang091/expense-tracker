@@ -7,7 +7,7 @@
     { "tool_id": "bundled:fish-tts", "version": "latest" }
   ],
   "ui": {
-    "bundle": { "format": "static-spa", "entry": "index.html", "external_origins": ["https://api.fish.audio"] },
+    "bundle": { "format": "static-spa", "entry": "index.html" },
     "views": [
       {
         "name": "main",
@@ -26,7 +26,7 @@
       "tools": ["optional:bundled:fish-tts"],
       "llm": ["complete"],
       "storage": ["get", "set", "delete", "list"],
-      "window": ["set_title", "ready"]
+      "window": ["ready"]
     }
   }
 }

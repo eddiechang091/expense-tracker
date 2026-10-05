@@ -5,7 +5,59 @@ Newest entries first. Times in America/Halifax.
 
 ---
 
-## 2026-10-05 15:55 — fix/lucky-cat-double-trigger → PR #16 (open, awaiting review)
+## 2026-10-05 16:30 — phase-7/production-hardening → PR (open, awaiting review)
+
+**Phase 7 — Production Hardening & Anna Release Preparation.**
+No new product features. Branch: `phase-7/production-hardening`.
+
+**Cleanup (Step 2):**
+- Deleted legacy Next.js implementation: `app/`, top-level `components/`,
+  `lib/`, `next.config.ts`, `next-env.d.ts` (tsconfig-excluded, zero importers).
+- Deleted committed `fish-e2e-report.json` (regenerable test output).
+- Deleted dead `ReadAloudButton.tsx`, `AIInsightCard.tsx`,
+  `hooks/useTextToSpeech.ts` (duplicate of services/tts).
+- Removed 96 lines of dead CSS (`.ai-insight-*`, `.read-aloud-btn`,
+  `.bubble-tts-row`, `.ai-insight-tts`, `.icon-btn`, `.section`).
+- Uninstalled `papaparse` + `@types/papaparse` (served deleted ImportCsv).
+- Kept: `scripts/` dev tooling, `.sdk.js` (vendored Anna SDK reference),
+  `manifest.qa-mobile.json` (QA variant, harmless).
+
+**Fish production (Steps 3–4, 7–8):**
+- Verified: model in HTTP header, `reference_id` in body, `s2.1-pro-free`,
+  no secret logging, bounded errors, chunked audio transfer.
+- Verbose diagnostics (fingerprints, dispatch logs, 422 excerpts) now gated
+  behind `FISH_TTS_DEBUG=1`; production stderr minimal.
+- `_load_env_file` is frozen-aware (PyInstaller onefile resolves `.env`
+  next to the binary).
+- Added `executas/fish-tts/build_binary.sh` (build + `--test` + `--package`).
+- Built + verified linux-x86_64 binary (ELF 8.9MB): initialize/describe/
+  health/invoke sequence passes, process stays alive, clean EOF exit,
+  stderr secret-free. darwin/windows binaries need their native hosts.
+
+**Secrets (Step 5):** `.gitignore` now excludes `.env` and
+`executas/**/.env`; repo + bundle scans clean (only a `sk-fish-…`
+placeholder string).
+
+**Manifest (Step 6):** removed unused `external_origins`
+(`https://api.fish.audio` — browser makes zero external requests; Fish is
+server-side via Executa) and unused `window.set_title`.
+
+**Contract reviews (Steps 10–13):** epoch guards intact; no double
+playback; Lucky Cat click never calls LLM; system prompt matches
+`05_AI_SYSTEM.md` (no shaming, no invented merchant/financial facts);
+speech text uses only InsightResult fields; storage namespaced
+(`expense-tracker:`), bounded (20 msgs, MAX_VALUE_BYTES), no secrets.
+
+**Verification:** `tsc` clean, `vitest` 196/196 (the known tts65 baseline
+failure now passes), `vite build` clean.
+
+**NOT done here (needs user's machine):** `anna-app validate --strict`
+(no CLI in this env), live Fish invocation with real key, harness QA
+(390x780 / 320px / failure matrix).
+
+---
+
+## 2026-10-05 15:55 — fix/lucky-cat-double-trigger → PR #16 (merged)
 
 **User report.** After merging #15, tapping the 3D cat fetched Fish
 audio but never played it.
