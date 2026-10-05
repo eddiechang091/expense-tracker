@@ -10,7 +10,8 @@ Configuration (environment variables):
 
 The API key MUST NOT appear in any frontend source, bundle, or log. It may
 arrive as the "api_key" invoke arg (forwarded from the app's Settings page);
-the Executa never logs its value, only a fingerprint.
+the Executa never logs its value, only a truncated SHA-256 fingerprint —
+and only when FISH_TTS_DEBUG=1 is set.
 
 The Executa loads its .env file automatically from the same directory as
 this file at startup. See .env.example for the expected format.
@@ -31,6 +32,18 @@ FISH_API_BASE = "https://api.fish.audio/v1"
 DEFAULT_MODEL = "s2.1-pro-free"
 DEFAULT_FORMAT = "mp3"
 DEFAULT_TIMEOUT = 30
+
+# Verbose diagnostics (credential fingerprints, request metadata) are only
+# printed when FISH_TTS_DEBUG=1. Production stderr stays minimal.
+def _is_debug() -> bool:
+    # Evaluated lazily so a FISH_TTS_DEBUG=1 set in .env (loaded in main())
+    # also takes effect.
+    return os.environ.get("FISH_TTS_DEBUG", "").strip() == "1"
+
+
+def _debug_log(msg: str) -> None:
+    if _is_debug():
+        print(f"[fish-tts] {msg}", file=sys.stderr, flush=True)
 
 
 # ---------------------------------------------------------------------------
@@ -159,17 +172,18 @@ def synthesize(params: dict) -> dict:
         body["reference_id"] = voice_ref
     # NOTE: model goes in the HTTP header, NOT the JSON body
 
-    # Diagnostics (no secrets logged)
-    key_fp = __import__("hashlib").sha256(api_key.encode()).hexdigest()[:8]
-    ref_fp = __import__("hashlib").sha256(voice_ref.encode()).hexdigest()[:8] if voice_ref else "(none)"
-    print(
-        f"[fish-tts] synthesize: endpoint={FISH_API_BASE}/tts "
+    # Diagnostics (no secrets logged; fingerprints only with FISH_TTS_DEBUG=1)
+    import hashlib as _hashlib
+
+    key_fp = _hashlib.sha256(api_key.encode()).hexdigest()[:8]
+    ref_fp = _hashlib.sha256(voice_ref.encode()).hexdigest()[:8] if voice_ref else "(none)"
+    _debug_log(
+        f"synthesize: endpoint={FISH_API_BASE}/tts "
         f"header-model={model} format={fmt} "
         f"reference_id_present={bool(voice_ref)} reference_id_length={len(voice_ref or '')} "
         f"reference_id_fingerprint={ref_fp} api_key_fingerprint={key_fp} "
         f"api_key_source={api_key_source} "
-        f"text_length={len(text)} body_keys={list(body.keys())}",
-        file=sys.stderr, flush=True,
+        f"text_length={len(text)} body_keys={list(body.keys())}"
     )
 
     try:
@@ -200,7 +214,7 @@ def synthesize(params: dict) -> dict:
         return {"success": False, "error": "FISH_HTTP_403: access denied."}
     if resp.status_code == 422:
         safe_excerpt = resp.text[:200] if resp.text else ""
-        print(f"[fish-tts] FISH_HTTP_422 body excerpt: {safe_excerpt}", file=sys.stderr, flush=True)
+        _debug_log(f"FISH_HTTP_422 body excerpt: {safe_excerpt}")
         return {"success": False, "error": "FISH_HTTP_422: invalid request parameters."}
     if resp.status_code == 429:
         return {"success": False, "error": "FISH_HTTP_429: rate limit reached. Try again shortly."}
@@ -259,11 +273,9 @@ def _chunked_audio_response(audio_b64: str, fmt: str) -> dict:
         _chunk_sessions.pop(next(iter(_chunk_sessions)))
     token = _uuid.uuid4().hex
     _chunk_sessions[token] = {"audio_b64": audio_b64, "format": fmt}
-    print(
-        f"[fish-tts] chunked response: {len(audio_b64)} b64 chars in "
-        f"{total} chunks, token={token[:8]}…",
-        file=sys.stderr,
-        flush=True,
+    _debug_log(
+        f"chunked response: {len(audio_b64)} b64 chars in "
+        f"{total} chunks, token={token[:8]}…"
     )
     return {
         "success": True,
@@ -357,20 +369,18 @@ def handle(req: dict) -> None:
     if req_id is None and method.startswith("notifications/"):
         return
 
-    # Log the incoming params structure for dispatch debugging (safe: no secrets in params)
-    print(
-        f"[fish-tts] handle: method={method!r} "
+    # Log the incoming params structure for dispatch debugging (debug mode only)
+    _debug_log(
+        f"handle: method={method!r} "
         f"params_keys={sorted(params.keys())} "
-        f"full_req_keys={sorted(req.keys())}",
-        file=sys.stderr, flush=True,
+        f"full_req_keys={sorted(req.keys())}"
     )
     # If this is an invoke, log nested keys to understand the dispatch format
     if method == "invoke":
         args_candidate = params.get("args") or params.get("arguments") or {}
-        print(
-            f"[fish-tts] invoke: name={params.get('name')!r} method={params.get('method')!r} "
-            f"args_keys={sorted(args_candidate.keys()) if isinstance(args_candidate, dict) else type(args_candidate).__name__}",
-            file=sys.stderr, flush=True,
+        _debug_log(
+            f"invoke: name={params.get('name')!r} method={params.get('method')!r} "
+            f"args_keys={sorted(args_candidate.keys()) if isinstance(args_candidate, dict) else type(args_candidate).__name__}"
         )
 
     if method == "initialize":
@@ -404,10 +414,9 @@ def handle(req: dict) -> None:
             or params.get("parameters")
             or {}
         )
-        print(
-            f"[fish-tts] invoke dispatch: tool_method={tool_method!r} "
-            f"args_keys={sorted(args.keys()) if isinstance(args, dict) else type(args).__name__}",
-            file=sys.stderr, flush=True,
+        _debug_log(
+            f"invoke dispatch: tool_method={tool_method!r} "
+            f"args_keys={sorted(args.keys()) if isinstance(args, dict) else type(args).__name__}"
         )
         if tool_method == "synthesize":
             result = synthesize(args)
@@ -486,10 +495,7 @@ def main() -> None:
     sys.stdout.flush()
     import time as _time
     _time.sleep(4)
-    print(
-        "[fish-tts] exiting after drain wait",
-        file=sys.stderr, flush=True,
-    )
+    _debug_log("exiting after drain wait")
 
 
 if __name__ == "__main__":
