@@ -25,9 +25,65 @@ import { STORAGE_KEYS } from "@/lib/constants";
 /** Compact container — keeps the base64 payload small for the stdio pipe. */
 const FISH_FORMAT = "opus";
 
-export interface FishAudioResult {
-  audio: ArrayBuffer;
-  format: string;
+export type FishErrorCode =
+  | "NO_HOST" // Anna tools.invoke unavailable (standalone mode)
+  | "NOT_CONFIGURED" // no API key anywhere (Executa env/.env or invoke arg)
+  | "INVALID_KEY" // Fish HTTP 401
+  | "NO_CREDITS" // Fish HTTP 402
+  | "FORBIDDEN" // Fish HTTP 403
+  | "BAD_REQUEST" // Fish HTTP 422 (often a bad voice reference ID)
+  | "RATE_LIMITED" // Fish HTTP 429
+  | "TIMEOUT"
+  | "NETWORK_ERROR"
+  | "INVALID_AUDIO"
+  | "TRANSPORT_ERROR"; // tools.invoke itself failed
+
+export type FishSpeakResult =
+  | { ok: true; audio: ArrayBuffer; format: string }
+  | { ok: false; code: FishErrorCode; message: string };
+
+/** User-facing message for a Fish failure (shown in the Lucky Cat bubble). */
+function userMessageFor(code: FishErrorCode, detail: string): string {
+  switch (code) {
+    case "NOT_CONFIGURED":
+      return "No Fish Audio API key is configured.";
+    case "INVALID_KEY":
+      return "The Fish Audio API key is invalid. Please check it in Settings.";
+    case "NO_CREDITS":
+      return "The Fish Audio account has run out of credits.";
+    case "FORBIDDEN":
+      return "Fish Audio denied access (403).";
+    case "BAD_REQUEST":
+      return "Fish Audio rejected the request — the voice reference ID may be invalid.";
+    case "RATE_LIMITED":
+      return "Fish Audio rate limit reached. Try again in a moment.";
+    case "TIMEOUT":
+      return "Fish Audio timed out.";
+    case "NETWORK_ERROR":
+      return "Could not reach Fish Audio (network error).";
+    case "INVALID_AUDIO":
+      return "Fish Audio returned invalid audio.";
+    case "TRANSPORT_ERROR":
+      return "Could not reach the voice service.";
+    case "NO_HOST":
+      return "Voice service is unavailable.";
+    default:
+      return detail || "Fish Audio failed.";
+  }
+}
+
+/** Map an Executa "FISH_*" error string to a FishErrorCode. */
+function codeForExecutaError(error: string): FishErrorCode {
+  if (error.startsWith("FISH_NOT_CONFIGURED")) return "NOT_CONFIGURED";
+  if (error.startsWith("FISH_HTTP_401")) return "INVALID_KEY";
+  if (error.startsWith("FISH_HTTP_402")) return "NO_CREDITS";
+  if (error.startsWith("FISH_HTTP_403")) return "FORBIDDEN";
+  if (error.startsWith("FISH_HTTP_422")) return "BAD_REQUEST";
+  if (error.startsWith("FISH_HTTP_429")) return "RATE_LIMITED";
+  if (error.startsWith("FISH_TIMEOUT")) return "TIMEOUT";
+  if (error.startsWith("FISH_REQUEST_FAILED")) return "NETWORK_ERROR";
+  if (error.startsWith("FISH_AUDIO_INVALID")) return "INVALID_AUDIO";
+  return "TRANSPORT_ERROR";
 }
 
 /** Read Fish Audio API key from VITE env (dev) or Anna Storage (Settings). */
@@ -109,17 +165,19 @@ function describeRaw(raw: unknown): string {
 
 /**
  * Synthesize `text` via the fish-tts Executa and return the audio bytes.
- * Returns null when the Anna host is unavailable, the Executa declines
- * (e.g. no API key configured anywhere), or the payload is invalid.
+ * Never throws for expected failures: they come back as {ok: false} with a
+ * machine-readable code and a user-facing message.
  */
-export async function fishSpeak(text: string): Promise<FishAudioResult | null> {
-  if (!text.trim()) return null;
+export async function fishSpeak(text: string): Promise<FishSpeakResult> {
+  if (!text.trim()) {
+    return { ok: false, code: "BAD_REQUEST", message: userMessageFor("BAD_REQUEST", "") };
+  }
 
   const runtime = await connectAnna();
   const invoke = runtime.client?.tools?.invoke;
   if (runtime.state !== "connected" || typeof invoke !== "function") {
     console.warn("[TTS:fish] Anna tools.invoke unavailable (standalone mode) — skipping Fish.");
-    return null;
+    return { ok: false, code: "NO_HOST", message: userMessageFor("NO_HOST", "") };
   }
 
   const apiKey = await getFishApiKey();
@@ -145,13 +203,21 @@ export async function fishSpeak(text: string): Promise<FishAudioResult | null> {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.warn("[TTS:fish] tools.invoke failed:", msg);
-    return null;
+    return { ok: false, code: "TRANSPORT_ERROR", message: userMessageFor("TRANSPORT_ERROR", msg) };
+  }
+
+  // The Executa reports its own failures as {success: false, error}.
+  if (raw && typeof raw === "object" && (raw as Record<string, unknown>).success === false) {
+    const detail = String((raw as Record<string, unknown>).error ?? "");
+    const code = codeForExecutaError(detail);
+    console.warn("[TTS:fish] Executa reported failure:", detail.slice(0, 200));
+    return { ok: false, code, message: userMessageFor(code, detail) };
   }
 
   const payload = extractAudioPayload(raw);
   if (!payload) {
     console.warn("[TTS:fish] Executa returned no audio:", describeRaw(raw));
-    return null;
+    return { ok: false, code: "INVALID_AUDIO", message: userMessageFor("INVALID_AUDIO", "") };
   }
 
   let buf: ArrayBuffer;
@@ -159,16 +225,16 @@ export async function fishSpeak(text: string): Promise<FishAudioResult | null> {
     buf = base64ToArrayBuffer(payload.audio_base64);
   } catch (err) {
     console.warn("[TTS:fish] base64 decode failed:", err instanceof Error ? err.message : err);
-    return null;
+    return { ok: false, code: "INVALID_AUDIO", message: userMessageFor("INVALID_AUDIO", "") };
   }
   console.log("[TTS:fish] audio bytes received:", buf.byteLength);
 
   if (buf.byteLength < 100) {
     console.warn("[TTS:fish] FISH_AUDIO_INVALID: response too small.");
-    return null;
+    return { ok: false, code: "INVALID_AUDIO", message: userMessageFor("INVALID_AUDIO", "") };
   }
 
-  return { audio: buf, format: payload.format || FISH_FORMAT };
+  return { ok: true, audio: buf, format: payload.format || FISH_FORMAT };
 }
 
 /** Whether the Fish path can be attempted (Anna host with tools.invoke). */
