@@ -13,3 +13,13 @@ output/
 .anna/
 dist/
 coverage/
+__pycache__/
+
+# Fish Audio parity test output
+fish-python-test.mp3
+
+# Fish Audio voice comparison outputs (compare locally, do not commit)
+fish-voice-*.mp3
+
+# Executa virtualenv
+executas/**/.venv/
