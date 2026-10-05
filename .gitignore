@@ -6,6 +6,7 @@ data/*.db*
 .github/*
 .vscode/*
 docs/*
+!docs/WORKING-TRACK.md
 
 # Anna build + runtime outputs
 bundle/

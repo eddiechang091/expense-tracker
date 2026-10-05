@@ -1,0 +1,71 @@
+# WORKING-TRACK.md — expense-tracker (Money Companion)
+
+Every change to this repo is recorded here with a timestamp (user git-workflow rule, 2026-09-26).
+Newest entries first. Times in America/Halifax.
+
+---
+
+## 2026-10-05 12:25 — fix/tts-default-system-voice → PR #8 (open, awaiting review)
+
+**Problem.** After the Phase 6.5 refactor, Money Buddy's Lucky Cat produced no
+sound at all. Root causes found by E2E investigation (2026-10-05):
+
+1. **CORS (concrete defect).** The refactor switched Fish TTS to a
+   browser-direct `fetch("https://api.fish.audio/v1/tts")`. Fish Audio's
+   gateway does not answer CORS preflights — `OPTIONS /v1/tts` returns 404
+   with no `Access-Control-Allow-Origin` (verified via curl). The browser
+   therefore blocks every request. Server-side calls (curl / Python /
+   Executa) are unaffected by CORS, which is why "the API call succeeded"
+   while the page stayed silent.
+2. **No zero-config voice.** The refactor also made TTS Fish-only: with no
+   API key reachable from inside Anna, the Lucky Cat showed an error bubble
+   instead of speaking. (Also confirmed: the shipped bundle contained zero
+   `speechSynthesis` references, so the earlier "system voice" report came
+   from a stale pre-refactor bundle.)
+
+**Fix (4 atomic commits on branch `fix/tts-default-system-voice`):**
+
+- `f38fc35` fix(tts): route Fish Audio through the fish-tts Executa —
+  `providers/fish.ts` calls the bundled Executa via `anna.tools.invoke`
+  (server-side, no CORS). API key forwarded as invoke arg (VITE env or Anna
+  Storage via Settings) with fallback to the Executa's own env/.env; voice
+  reference ID forwarded the same way. Returns `{audio, format}`.
+- `1a5f9eb` feat(tts): default to a soft female system voice —
+  `providers/browser.ts` gains `pickDefaultVoice()` (English female voice
+  preferred by name heuristic, gentle prosody: rate 0.95, pitch 1.05).
+- `e796b37` feat(tts): Fish-first with system-voice fallback orchestration —
+  `index.ts` tries Fish, falls back to browser SpeechSynthesis; `stopAll()`
+  cancels browser speech too; Blob MIME follows format (opus → audio/ogg);
+  `isTTSSupported()` is a sync browser check again; `TTSProvider` gains
+  `"browser"`.
+- `4a33872` feat(fish-tts): accept api_key as an invoke arg —
+  `executas/fish-tts/fish_tts/main.py` prefers the arg, falls back to
+  env/.env; logs fingerprint + source only, never the value.
+
+**Verification:** `vitest` 196/196 pass (incl. the previously stale
+`isTTSSupported` expectation), `tsc --noEmit` clean, `vite build` clean.
+
+**Behavior now:** Lucky Cat → Fish voice when a key is configured (Settings
+page → Anna Storage, or Executa `.env` on the harness) → otherwise a soft
+female system voice with zero setup. No API key is baked into the bundle.
+
+**Not done / notes:**
+- The old `scripts/fish-e2e-smoke.mjs` targets the pre-refactor Executa RPC
+  shape and a Windows Chrome path; it needs updating for the new flow
+  (steps 6–9 now assert `tools.invoke`, which matches again).
+- `manifest.json` still declares `external_origins: ["https://api.fish.audio"]`
+  — harmless now (no browser-direct calls remain) but could be cleaned up.
+- Dead code left for a later cleanup pass: `src/hooks/useTextToSpeech.ts` +
+  `ReadAloudButton.tsx` (unused since the /ai Read-Aloud removal).
+
+---
+
+## 2026-10-05 (earlier) — E2E investigation, no code changes
+
+- Cloned `eddiechang091/expense-tracker`; traced Lucky Cat →
+  `services/tts` → browser-direct Fish fetch.
+- Confirmed Fish CORS preflight failure (OPTIONS → 404, no CORS headers).
+- Confirmed shipped bundle had no SpeechSynthesis (stale-bundle diagnosis
+  for the "system voice" report).
+- `vitest` 195/196 (1 stale `isTTSSupported` expectation), `tsc` clean,
+  `vite build` clean. No code modified during investigation.
