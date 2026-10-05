@@ -12,6 +12,9 @@ export interface AnnaClient {
     ready?: (input: unknown) => Promise<unknown>;
     set_title?: (input: unknown) => Promise<unknown>;
   };
+  tools?: {
+    invoke?: (input: { tool_id: string; method: string; args?: unknown }) => Promise<unknown>;
+  };
 }
 
 export interface AnnaRuntime {
