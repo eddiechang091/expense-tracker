@@ -697,16 +697,44 @@ a:hover { text-decoration: underline; }
 }
 
 /* ─── Phase 6.5: Lucky Cat / Money Buddy Voice ───────────────────────────── */
-.lucky-cat-card {
+/* 3D companion: fixed bottom-right like the BrightNest panda — it stays
+   on screen while the page scrolls. */
+.lucky-cat-3d-wrap {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 40;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 24px 16px 20px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
+  gap: 2px;
+  pointer-events: none; /* clicks go to the stage / bubble only */
+}
+.lucky-cat-3d-stage {
+  pointer-events: auto;
+  cursor: pointer;
+  border-radius: 24px;
+  outline-offset: 4px;
+}
+.lucky-cat-3d-stage:focus-visible {
+  outline: 2px solid var(--primary);
+}
+.lucky-cat-3d-stage.is-waiting { cursor: default; }
+.lucky-cat-mount canvas { display: block; }
+.lucky-cat-loading {
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--primary-soft) 30%, transparent 70%);
+  animation: bubble-pulse 1.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lucky-cat-loading { animation: none; }
+}
+/* Bubble sits above the cat's head */
+.lucky-cat-3d-wrap .cat-bubble {
+  pointer-events: auto;
+  margin-bottom: -6px;
+  position: relative;
+  z-index: 1;
 }
 
 /* Speech bubble */
@@ -790,72 +818,4 @@ a:hover { text-decoration: underline; }
 }
 @media (prefers-reduced-motion: reduce) {
   .cat-bubble--speaking { animation: none; }
-}
-
-/* Cat interactive button */
-.lucky-cat-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  border-radius: var(--radius);
-  padding: 8px;
-  transition: transform var(--dur-fast) var(--ease);
-  animation: cat-idle 4s ease-in-out infinite;
-}
-.lucky-cat-btn:hover { transform: scale(1.05); }
-.lucky-cat-btn:active { transform: scale(0.97); }
-.lucky-cat-btn:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 4px;
-  border-radius: var(--radius);
-}
-.lucky-cat-btn.is-waiting { cursor: default; opacity: 0.75; }
-.lucky-cat-btn.is-speaking { animation: cat-speak 0.7s ease-in-out infinite alternate; }
-
-@keyframes cat-idle {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-4px); }
-}
-@keyframes cat-speak {
-  from { transform: rotate(-2deg) translateY(0); }
-  to   { transform: rotate(2deg) translateY(-3px); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .lucky-cat-btn { animation: none; }
-  .lucky-cat-btn.is-speaking { animation: none; }
-  .lucky-cat-btn:hover { transform: none; }
-}
-
-/* SVG */
-.lucky-cat-svg {
-  width: 110px;
-  height: auto;
-  display: block;
-}
-
-/* Paw wave animation during speaking */
-.lucky-cat-svg .lucky-cat-paw {
-  transform-origin: 90px 85px;
-}
-.lucky-cat-svg.is-speaking .lucky-cat-paw {
-  animation: paw-wave 0.5s ease-in-out infinite alternate;
-}
-@keyframes paw-wave {
-  from { transform: rotate(-8deg); }
-  to   { transform: rotate(8deg); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .lucky-cat-svg.is-speaking .lucky-cat-paw { animation: none; }
-}
-
-/* Glow ring */
-.lucky-cat-glow {
-  animation: glow-pulse 1.2s ease-in-out infinite;
-}
-@keyframes glow-pulse {
-  0%, 100% { opacity: 0.15; r: 32; }
-  50%       { opacity: 0.55; r: 36; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .lucky-cat-glow { animation: none; opacity: 0.25; }
 }
