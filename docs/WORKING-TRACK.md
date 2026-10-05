@@ -5,6 +5,20 @@ Newest entries first. Times in America/Halifax.
 
 ---
 
+## 2026-10-05 14:45 — PR #13 MERGED (main at b05d61e). Fish TTS verified working end-to-end.
+
+User test after merging #13: health returns `fish_configured: true`,
+`api_key forwarded: false`, Fish returns HTTP 200, audio plays in the
+correct Fish voice. The 64 KB chunking, health-gated key forwarding,
+and failure-confirmation UX all hold in the real harness.
+
+One user-side note: a test run with `--no-llm` produced the local
+fallback line ("$45.00 in Food. logged!") instead of an LLM insight —
+expected behavior, not a bug. Restart the harness without `--no-llm`
+for LLM-generated speech content.
+
+---
+
 ## 2026-10-05 14:30 — fix/tts-health-invoke-dispatch → PR #13 (open, awaiting review)
 
 **User report.** After rebuilding with #10 merged, console still shows
