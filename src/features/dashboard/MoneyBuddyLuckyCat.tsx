@@ -1,92 +1,44 @@
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import type { InsightResult } from "@/lib/aiSchema";
 import { useTTS } from "@/services/tts/useTTS";
 import { resultToSpeechText } from "@/services/tts/textUtils";
+import { CAT_SIZE } from "./luckyCat3d/constants";
+import type { LuckyCatCanvasApi } from "./luckyCat3d/LuckyCatCanvas";
 
 // ---------------------------------------------------------------------------
-// Inline SVG Lucky Cat (Maneki-neko)
-// CSS/SVG illustration — no remote assets, no external libraries.
+// Money Buddy Lucky Cat — 3D companion (Three.js, lazy-loaded chunk).
+//
+// The cat is a fixed bottom-right companion like the BrightNest panda:
+// it stays on screen while the page scrolls, waves its signature
+// beckoning paw, and shows the idle bubble above its head 5s out of
+// every 20s (same rhythm as the panda). Tap the cat to hear the AI
+// spending summary (Fish TTS), tap again to stop.
 // ---------------------------------------------------------------------------
-function LuckyCatSVG({ speaking }: { speaking: boolean }) {
+const LuckyCatCanvas = lazy(() => import("./luckyCat3d/LuckyCatCanvas"));
+
+function CatFallback() {
   return (
-    <svg
-      viewBox="0 0 120 140"
-      xmlns="http://www.w3.org/2000/svg"
-      className={`lucky-cat-svg${speaking ? " is-speaking" : ""}`}
+    <div
+      className="lucky-cat-loading"
+      style={{ width: CAT_SIZE, height: CAT_SIZE }}
       aria-hidden="true"
-      focusable="false"
-    >
-      {/* Body */}
-      <ellipse cx="60" cy="100" rx="32" ry="36" fill="#fff8f0" stroke="#e8d5c0" strokeWidth="2" />
-
-      {/* Left sitting leg */}
-      <ellipse cx="38" cy="126" rx="12" ry="8" fill="#fff8f0" stroke="#e8d5c0" strokeWidth="1.5" />
-      {/* Right sitting leg */}
-      <ellipse cx="82" cy="126" rx="12" ry="8" fill="#fff8f0" stroke="#e8d5c0" strokeWidth="1.5" />
-
-      {/* Tail */}
-      <path d="M88 115 Q112 100 106 82 Q102 70 92 76" fill="none" stroke="#e8d5c0" strokeWidth="4" strokeLinecap="round" />
-
-      {/* Left arm (down) */}
-      <ellipse cx="30" cy="95" rx="7" ry="12" fill="#fff8f0" stroke="#e8d5c0" strokeWidth="1.5" transform="rotate(-15 30 95)" />
-
-      {/* Right arm — raised (beckoning paw) */}
-      <g className="lucky-cat-paw">
-        <ellipse cx="90" cy="70" rx="7" ry="14" fill="#fff8f0" stroke="#e8d5c0" strokeWidth="1.5" transform="rotate(30 90 70)" />
-        {/* Paw */}
-        <circle cx="95" cy="58" r="7" fill="#fff8f0" stroke="#e8d5c0" strokeWidth="1.5" />
-        {/* Paw lines */}
-        <line x1="91" y1="54" x2="91" y2="60" stroke="#e8d5c0" strokeWidth="1" strokeLinecap="round" />
-        <line x1="95" y1="53" x2="95" y2="60" stroke="#e8d5c0" strokeWidth="1" strokeLinecap="round" />
-        <line x1="99" y1="54" x2="99" y2="60" stroke="#e8d5c0" strokeWidth="1" strokeLinecap="round" />
-      </g>
-
-      {/* Head */}
-      <circle cx="60" cy="60" r="30" fill="#fff8f0" stroke="#e8d5c0" strokeWidth="2" />
-
-      {/* Left ear */}
-      <polygon points="36,40 30,18 46,32" fill="#fff8f0" stroke="#e8d5c0" strokeWidth="1.5" />
-      <polygon points="37,38 32,22 44,33" fill="#ffb3c1" />
-      {/* Right ear */}
-      <polygon points="84,40 90,18 74,32" fill="#fff8f0" stroke="#e8d5c0" strokeWidth="1.5" />
-      <polygon points="83,38 88,22 76,33" fill="#ffb3c1" />
-
-      {/* Eyes */}
-      <ellipse cx="50" cy="58" rx="5" ry="6" fill="#2b2a33" />
-      <ellipse cx="70" cy="58" rx="5" ry="6" fill="#2b2a33" />
-      {/* Eye shine */}
-      <circle cx="52" cy="56" r="2" fill="white" />
-      <circle cx="72" cy="56" r="2" fill="white" />
-
-      {/* Nose */}
-      <ellipse cx="60" cy="67" rx="3" ry="2" fill="#ffb3c1" />
-      {/* Mouth */}
-      <path d="M55 70 Q60 74 65 70" fill="none" stroke="#e8d5c0" strokeWidth="1.5" strokeLinecap="round" />
-      {/* Whiskers */}
-      <line x1="30" y1="66" x2="50" y2="68" stroke="#e8d5c0" strokeWidth="1" strokeLinecap="round" />
-      <line x1="30" y1="70" x2="50" y2="70" stroke="#e8d5c0" strokeWidth="1" strokeLinecap="round" />
-      <line x1="70" y1="68" x2="90" y2="66" stroke="#e8d5c0" strokeWidth="1" strokeLinecap="round" />
-      <line x1="70" y1="70" x2="90" y2="70" stroke="#e8d5c0" strokeWidth="1" strokeLinecap="round" />
-
-      {/* Collar */}
-      <path d="M35 80 Q60 88 85 80" fill="none" stroke="#6c5ce7" strokeWidth="5" strokeLinecap="round" />
-      {/* Bell */}
-      <circle cx="60" cy="82" r="5" fill="#f4b740" stroke="#e8d5c0" strokeWidth="1" />
-      <line x1="60" y1="84" x2="60" y2="87" stroke="#e8d5c0" strokeWidth="1" />
-
-      {/* Speaking glow ring */}
-      {speaking && (
-        <circle cx="60" cy="60" r="32" fill="none" stroke="#6c5ce7" strokeWidth="2" opacity="0.4"
-          className="lucky-cat-glow" />
-      )}
-    </svg>
+    />
   );
 }
 
 // ---------------------------------------------------------------------------
-// Speech bubble
+// Speech bubble (above the head)
 // ---------------------------------------------------------------------------
-function SpeechBubble({ speaking, hasResult }: { speaking: boolean; hasResult: boolean }) {
+function SpeechBubble({
+  speaking,
+  hasResult,
+  inviteOn,
+}: {
+  speaking: boolean;
+  hasResult: boolean;
+  inviteOn: boolean;
+}) {
   if (speaking) {
     return (
       <div className="cat-bubble cat-bubble--speaking" role="status" aria-live="polite">
@@ -101,6 +53,7 @@ function SpeechBubble({ speaking, hasResult }: { speaking: boolean; hasResult: b
       </div>
     );
   }
+  if (!inviteOn) return null;
   return (
     <div className="cat-bubble">
       🎧 Tap me — I have something to tell you!
@@ -118,6 +71,9 @@ export interface MoneyBuddyLuckyCatProps {
 
 export function MoneyBuddyLuckyCat({ insightResult }: MoneyBuddyLuckyCatProps) {
   const { speak, speakWithSystemVoice, stop, isSpeaking, state } = useTTS();
+  const canvasApiRef = useRef<LuckyCatCanvasApi | null>(null);
+  // idle invitation bubble: visible 5s out of every 20s (panda rhythm)
+  const [inviteOn, setInviteOn] = useState(true);
 
   const speechText =
     insightResult && !insightResult.isFallback
@@ -126,7 +82,25 @@ export function MoneyBuddyLuckyCat({ insightResult }: MoneyBuddyLuckyCatProps) {
       ? resultToSpeechText(insightResult) // fallback content is still speakable
       : "";
 
+  const hasResult = speechText.length > 0;
   const awaitingConfirmation = state.status === "awaiting-confirmation";
+
+  useEffect(() => {
+    if (awaitingConfirmation || isSpeaking || !hasResult) {
+      setInviteOn(false);
+      return;
+    }
+    setInviteOn(true);
+    const t1 = window.setTimeout(() => setInviteOn(false), 5000);
+    const iv = window.setInterval(() => {
+      setInviteOn(true);
+      window.setTimeout(() => setInviteOn(false), 5000);
+    }, 20000);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearInterval(iv);
+    };
+  }, [awaitingConfirmation, isSpeaking, hasResult]);
 
   function handleActivate() {
     if (awaitingConfirmation) {
@@ -141,14 +115,13 @@ export function MoneyBuddyLuckyCat({ insightResult }: MoneyBuddyLuckyCatProps) {
     }
   }
 
-  function handleKeyDown(e: KeyboardEvent<HTMLButtonElement>) {
+  function handleKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       handleActivate();
     }
   }
 
-  const hasResult = speechText.length > 0;
   const ariaLabel = awaitingConfirmation
     ? "Money Buddy lucky cat — voice problem, tap to dismiss"
     : isSpeaking
@@ -162,8 +135,8 @@ export function MoneyBuddyLuckyCat({ insightResult }: MoneyBuddyLuckyCatProps) {
   // used silently once a key is set.
   if (awaitingConfirmation) {
     return (
-      <div className="lucky-cat-card">
-        <div className="cat-bubble cat-bubble--error" role="alert">
+      <div className="lucky-cat-3d-wrap" role="alert">
+        <div className="cat-bubble cat-bubble--error">
           <span className="cat-bubble-error-title">⚠️ My Fish voice ran into a problem</span>
           <span className="cat-bubble-error-detail">{state.message}</span>
           <span className="cat-bubble-confirm-q">Continue with the system voice?</span>
@@ -175,42 +148,43 @@ export function MoneyBuddyLuckyCat({ insightResult }: MoneyBuddyLuckyCatProps) {
             >
               Use system voice
             </button>
-            <button
-              type="button"
-              className="cat-confirm-btn"
-              onClick={stop}
-            >
+            <button type="button" className="cat-confirm-btn" onClick={stop}>
               Not now
             </button>
           </span>
         </div>
-        <button
-          type="button"
-          className="lucky-cat-btn"
+        <div
+          role="button"
+          tabIndex={0}
           aria-label={ariaLabel}
           onClick={handleActivate}
           onKeyDown={handleKeyDown}
+          className="lucky-cat-3d-stage"
         >
-          <LuckyCatSVG speaking={false} />
-        </button>
+          <Suspense fallback={<CatFallback />}>
+            <LuckyCatCanvas ref={canvasApiRef} speaking={false} onActivate={handleActivate} />
+          </Suspense>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="lucky-cat-card">
-      <SpeechBubble speaking={isSpeaking} hasResult={hasResult} />
-      <button
-        type="button"
-        className={`lucky-cat-btn${isSpeaking ? " is-speaking" : ""}${!hasResult ? " is-waiting" : ""}`}
+    <div className="lucky-cat-3d-wrap">
+      <SpeechBubble speaking={isSpeaking} hasResult={hasResult} inviteOn={inviteOn} />
+      <div
+        role="button"
+        tabIndex={hasResult ? 0 : -1}
         aria-label={ariaLabel}
         aria-pressed={isSpeaking}
-        disabled={!hasResult}
         onClick={handleActivate}
         onKeyDown={handleKeyDown}
+        className={`lucky-cat-3d-stage${isSpeaking ? " is-speaking" : ""}${!hasResult ? " is-waiting" : ""}`}
       >
-        <LuckyCatSVG speaking={isSpeaking} />
-      </button>
+        <Suspense fallback={<CatFallback />}>
+          <LuckyCatCanvas ref={canvasApiRef} speaking={isSpeaking} onActivate={handleActivate} />
+        </Suspense>
+      </div>
     </div>
   );
 }
