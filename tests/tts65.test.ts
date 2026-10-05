@@ -120,11 +120,14 @@ describe("isTTSSupported", () => {
 });
 
 describe("fishSpeak", () => {
-  it("returns null when Anna client has no tools.invoke", async () => {
+  it("reports failure when Anna client has no tools.invoke", async () => {
     const { fishSpeak } = await import("@/services/tts/providers/fish");
     // connectAnna() returns standalone (no client) in Node.js test env
     const result = await fishSpeak("hello");
-    expect(result).toBeNull();
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.code).toBe("NO_HOST");
+    }
   });
 });
 
