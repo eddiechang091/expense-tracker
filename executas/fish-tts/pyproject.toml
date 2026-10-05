@@ -1,0 +1,15 @@
+[project]
+name = "fish-tts"
+version = "1.0.0"
+description = "Money Companion — Fish Audio TTS adapter"
+requires-python = ">=3.11"
+dependencies = [
+    "requests>=2.31,<3",
+]
+
+[project.scripts]
+tool-dev-fish-tts = "fish_tts.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
