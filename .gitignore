@@ -1,7 +1,10 @@
 node_modules
 .next
 data/*.db*
+# Local secrets — never commit API keys
+.env
 .env*.local
+executas/**/.env
 .clinerules/*
 .github/*
 .vscode/*
