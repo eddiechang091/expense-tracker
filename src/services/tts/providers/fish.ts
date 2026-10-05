@@ -117,6 +117,52 @@ async function getFishVoiceId(): Promise<string> {
   }
 }
 
+interface FishHealth {
+  configured: boolean;
+}
+
+/**
+ * Unwrap a host result that may be the payload directly or nested under
+ * data/result/value envelopes.
+ */
+function unwrapToRecord(raw: unknown): Record<string, unknown> | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const record = raw as Record<string, unknown>;
+  const candidates = [record, record.data, record.result, record.value];
+  for (const cand of candidates) {
+    if (cand && typeof cand === "object" && !Array.isArray(cand)) {
+      return cand as Record<string, unknown>;
+    }
+  }
+  return null;
+}
+
+type InvokeFn = (input: {
+  tool_id: string;
+  method: string;
+  args?: unknown;
+}) => Promise<unknown>;
+
+/**
+ * Ask the Executa whether it already has an API key (env/.env).
+ * Used to decide whether the user's Settings key must be forwarded:
+ * the secret stays out of the harness RPC log whenever a server-side
+ * key exists. Returns null when the check itself fails (safe default:
+ * forward the key).
+ */
+async function getFishHealth(invoke: InvokeFn, toolId: string): Promise<FishHealth | null> {
+  try {
+    const raw = await invoke({ tool_id: toolId, method: "health", args: {} });
+    const record = unwrapToRecord(raw);
+    if (record && typeof record.fish_configured === "boolean") {
+      return { configured: record.fish_configured };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function base64ToArrayBuffer(b64: string): ArrayBuffer {
   const bin = atob(b64);
   const bytes = new Uint8Array(bin.length);
@@ -182,24 +228,31 @@ export async function fishSpeak(text: string): Promise<FishSpeakResult> {
 
   const apiKey = await getFishApiKey();
   const voiceId = await getFishVoiceId();
+  const toolId = getFishTtsToolId();
+
+  // Only forward the user's Settings key when the Executa doesn't already
+  // have one (env/.env): the secret then stays out of the harness RPC log.
+  // When the health check itself fails, forward it (safe default).
+  const health = await getFishHealth(invoke, toolId);
 
   const args: Record<string, string> = { text, format: FISH_FORMAT };
   if (voiceId) args.voice_reference_id = voiceId;
   // Passed through to the Executa; it falls back to its own env/.env.
   // Never logged by either side.
-  if (apiKey) args.api_key = apiKey;
+  if (apiKey && health?.configured !== true) args.api_key = apiKey;
 
   console.log(
     "[TTS:fish] invoking fish-tts Executa",
-    "tool_id:", getFishTtsToolId(),
+    "tool_id:", toolId,
     "voice_id present:", !!voiceId,
-    "api_key present:", !!apiKey,
+    "api_key forwarded:", !!args.api_key,
+    "executa key configured:", health?.configured ?? "unknown",
     "text length:", text.length,
   );
 
   let raw: unknown;
   try {
-    raw = await invoke({ tool_id: getFishTtsToolId(), method: "synthesize", args });
+    raw = await invoke({ tool_id: toolId, method: "synthesize", args });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.warn("[TTS:fish] tools.invoke failed:", msg);
