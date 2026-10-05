@@ -5,6 +5,38 @@ Newest entries first. Times in America/Halifax.
 
 ---
 
+## 2026-10-05 13:20 — fix/tts-chunked-audio-transfer → PR #11 (open, awaiting review)
+
+**User report.** Executa installed and Fish API returns HTTP 200 with
+100862 bytes of audio, yet the harness reports `tool_failed: executa
+process exited` ~8s after invoke — Lucky Cat still falls back to system
+voice.
+
+**Root cause.** The harness cannot reliably read a single stdout JSON
+line much larger than ~64 KB (empirically: ~41 KB response fine, ~135 KB
+base64 response kills the process). This is the same pipe-read limit
+that motivated the (broken) browser-direct pivot in Phase 6.5.
+
+**Fix (2 atomic commits on branch `fix/tts-chunked-audio-transfer`):**
+
+- `executas/fish-tts/main.py`: `synthesize()` splits base64 audio over
+  48K chars into numbered chunks served via a new `get_chunk` method
+  (token-based sessions, bounded to 8, freed after the last chunk).
+  Small audio stays single-chunk, backward compatible. Manifest updated.
+- `providers/fish.ts`: `fishSpeak()` fetches remaining chunks when
+  `total_chunks > 1` and reassembles before decoding. Each JSON line stays
+  ~50 KB.
+
+**Verification:** chunking round-trip tested locally in Python
+(134484 chars → 3 chunks → byte-identical reassembly; max JSON line
+~49 KB); `vitest` 196/196, `tsc` clean, `vite build` clean.
+
+**Note for the user:** the Executa is installed editable (`pip install -e`),
+so pulling this change updates the running code — but the harness must be
+restarted to respawn the process.
+
+---
+
 ## 2026-10-05 13:05 — fix/tts-minimize-key-exposure → PR #10 (open, awaiting review)
 
 **User question.** After revoking a key that had appeared in plaintext in a
