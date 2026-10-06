@@ -858,13 +858,13 @@ a:hover { text-decoration: underline; }
   width: 100%;
   padding: 14px 12px 12px;
   margin: 4px 0 8px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: var(--radius);
   cursor: pointer;
   text-align: center;
 }
-.profile-chip:hover { background: var(--surface-3); }
+.profile-chip:hover { background: var(--surface-2); }
 .profile-chip.is-active { border-color: var(--primary); background: var(--primary-soft); }
 .profile-chip-avatar {
   position: relative;
@@ -893,10 +893,7 @@ a:hover { text-decoration: underline; }
   white-space: nowrap;
   max-width: 100%;
 }
-.profile-chip-sub {
-  font-size: 12px;
-  color: var(--text-2);
-}
+
 
 .profile-fab { display: none; }
 @media (max-width: 900px) {
@@ -1112,4 +1109,24 @@ a:hover { text-decoration: underline; }
   align-items: center;
   justify-content: center;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Avatar picker modal */
+.avatar-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+.avatar-modal {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 20px;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.25);
 }

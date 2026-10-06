@@ -27,7 +27,6 @@ export function SideNav({
           <span className="profile-chip-status" title={status.label}>{status.emoji}</span>
         </span>
         <span className="profile-chip-name">{profile.displayName}</span>
-        <span className="profile-chip-sub">{status.label}</span>
       </button>
       {NAV_ITEMS.map((item) => {
         const Icon = item.icon;
