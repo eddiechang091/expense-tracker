@@ -5,7 +5,28 @@ Newest entries first. Times in America/Halifax.
 
 ---
 
-## 2026-10-05 22:30 — feat/streak-badges → PR (open, awaiting review)
+## 2026-10-05 23:30 — feat/profile-page → PR (open, awaiting review)
+
+**Dashboard slim-down + GitHub-style profile page** (user review feedback).
+
+- Dashboard now only: DailyDelightCard → Total spending hero (Recent
+  merged in, Add/View-all buttons removed) → Where it went.
+- Removed PageHeader insight-headline lede (redundant with delight).
+- Deleted now-unused SpendingChanges + SpendingChart.
+- Profile page (`/profile`): avatar + editable name, status picker
+  (Available/Focusing/Busy/Away), full-year heatmap with year tabs and
+  stats, badges. Entry: SideNav chip (desktop), floating avatar (mobile).
+- User info: Anna SDK exposes no user API today (only llm/storage/
+  window/tools) — profile is local in Anna Storage (`profile` key);
+  `fetchAnnaUser` probes the host so a future API drops in cleanly.
+- Streak + badges moved from dashboard to profile; unlock checks still
+  run on dashboard for toast celebrations.
+
+**Verification:** `tsc` clean, `vitest` 219/219, `vite build` clean.
+
+---
+
+## 2026-10-05 22:30 — feat/streak-badges → PR #18 (open, awaiting review)
 
 **Streak board + badges + daily delight** (user: "每天打开的冲动").
 
