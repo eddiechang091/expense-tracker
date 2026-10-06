@@ -13,16 +13,30 @@ import { ExpensesProvider } from "@/services/expenses/useExpenses";
 import { ProfileProvider } from "@/services/profile/useProfile";
 import { BudgetsProvider } from "@/services/budgets/useBudgets";
 import { CatProvider } from "@/services/cat/useCat";
+import { ThemeProvider, useTheme } from "@/services/theme/useTheme";
+
+function ThemedBackground() {
+  const { background } = useTheme();
+  return (
+    <div
+      className="theme-bg"
+      aria-hidden="true"
+      style={{ backgroundImage: `url("${background}")` }}
+    />
+  );
+}
 
 export function App() {
   const [route, navigate] = useRoute();
 
   return (
     <ToastProvider>
+      <ThemeProvider>
       <ProfileProvider>
       <ExpensesProvider>
         <BudgetsProvider>
           <CatProvider>
+          <ThemedBackground />
           <AppShell route={route} onNavigate={navigate}>
             {renderRoute(route, navigate)}
           </AppShell>
@@ -30,6 +44,7 @@ export function App() {
         </BudgetsProvider>
       </ExpensesProvider>
       </ProfileProvider>
+      </ThemeProvider>
     </ToastProvider>
   );
 }

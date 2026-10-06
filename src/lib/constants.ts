@@ -15,6 +15,7 @@ export const STORAGE_KEYS = {
   // Fish Audio TTS configuration — user-provided, not app secrets
   fishApiKey: "settings:fish_api_key",
   fishVoiceId: "settings:fish_voice_id",
+  theme: "settings:theme",
   // Gamification — streaks, badges, daily delight
   badgesUnlocked: "gamification:badges",
   longestStreak: "gamification:longest_streak",
