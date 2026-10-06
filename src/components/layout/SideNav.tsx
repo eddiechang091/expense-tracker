@@ -48,7 +48,7 @@ export function SideNav({
         );
       })}
       <span className="nav-spacer" />
-      <Button block onClick={() => onNavigate("/add-expense")}>
+      <Button block variant="warm" onClick={() => onNavigate("/add-expense")}>
         <Plus size={16} aria-hidden="true" />
         Add expense
       </Button>

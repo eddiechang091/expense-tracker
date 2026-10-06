@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger";
+type Variant = "primary" | "secondary" | "ghost" | "danger" | "warm";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
@@ -14,6 +14,7 @@ const VARIANT_CLASS: Record<Variant, string> = {
   secondary: "secondary",
   ghost: "ghost",
   danger: "danger",
+  warm: "btn-warm",
 };
 
 export function Button({
