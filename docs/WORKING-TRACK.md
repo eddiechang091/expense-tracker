@@ -5,7 +5,29 @@ Newest entries first. Times in America/Halifax.
 
 ---
 
-## 2026-10-05 16:30 — phase-7/production-hardening → PR (open, awaiting review)
+## 2026-10-05 22:30 — feat/streak-badges → PR (open, awaiting review)
+
+**Streak board + badges + daily delight** (user: "每天打开的冲动").
+
+- Deleted dead `/insights` stub route + nav item.
+- `src/lib/streak.ts`: `computeStreak` (current/longest/total, alive-but-idle
+  detection) + `buildHeatmap` (16 weeks, Sun..Sat, 0–4 intensity).
+- `src/features/gamification/badges.ts`: 8 badges (first expense,
+  streaks 3/7/30/100, 50 expenses, first budget, first chat).
+- `useGamification`: computes streak/heatmap, checks unlocks against
+  Anna Storage (`gamification:badges`, `gamification:longest_streak`),
+  returns newly-unlocked for celebration.
+- `src/features/delight/`: one LLM-generated small joy per day, cached
+  under `daily:delight:<YYYY-MM-DD>` (one LLM call/day); 14-item local
+  pool fallback; recent delights passed to avoid repeats.
+- Dashboard: warm Money Buddy headline as page lede, DailyDelightCard,
+  StreakCard (heatmap), BadgesRow with toast celebrations.
+
+**Verification:** `tsc` clean, `vitest` 215/215 (19 new), `vite build` clean.
+
+---
+
+## 2026-10-05 16:30 — phase-7/production-hardening → PR #17 (open, awaiting review)
 
 **Phase 7 — Production Hardening & Anna Release Preparation.**
 No new product features. Branch: `phase-7/production-hardening`.

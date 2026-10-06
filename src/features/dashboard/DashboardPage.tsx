@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo } from "react";
+import { lazy, Suspense, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -24,6 +24,11 @@ import { RecentExpenses } from "./RecentExpenses";
 import { SpendingChanges } from "./SpendingChanges";
 import { MoneyBuddyLuckyCat } from "./MoneyBuddyLuckyCat";
 import { useInsight } from "@/features/ai/useInsight";
+import { useToast } from "@/components/ui/Toast";
+import { DailyDelightCard } from "@/features/delight/DailyDelightCard";
+import { StreakCard } from "@/features/gamification/StreakCard";
+import { BadgesRow } from "@/features/gamification/BadgesRow";
+import { useGamification } from "@/features/gamification/useGamification";
 
 const SpendingChart = lazy(() => import("@/components/ui/SpendingChart"));
 
@@ -73,6 +78,15 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
     [latestExpenseRef?.id]
   );
   const insight = useInsight(latestExpense, expenses, budgets);
+  const { notify } = useToast();
+  const { streak, heatmap, unlockedIds, newlyUnlocked } = useGamification(expenses, budgets.length);
+
+  // Celebrate newly unlocked badges once.
+  useEffect(() => {
+    for (const b of newlyUnlocked) {
+      notify(`🏅 Badge unlocked: ${b.emoji} ${b.name}!`);
+    }
+  }, [newlyUnlocked, notify]);
 
   if (isLoading) {
     return (
@@ -90,7 +104,17 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
 
   return (
     <>
-      <PageHeader title="Dashboard" lede={`${monthLabel}`} />
+      <PageHeader
+        title="Dashboard"
+        lede={
+          insight.status === "ready" && insight.result?.headline
+            ? insight.result.headline
+            : `${monthLabel} · good to see you`
+        }
+      />
+
+      {/* Daily delight */}
+      <DailyDelightCard />
 
       {/* Hero: monthly total + budget progress */}
       <Card>
@@ -133,6 +157,18 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
           </div>
         )}
       </Card>
+
+      {/* Streak + badges */}
+      {monthExpenses.length > 0 ? (
+        <>
+          <Card>
+            <StreakCard streak={streak} heatmap={heatmap} />
+          </Card>
+          <Card>
+            <BadgesRow unlockedIds={unlockedIds} />
+          </Card>
+        </>
+      ) : null}
 
       {/* Category breakdown */}
       {catTotals.length > 0 ? (

@@ -27,5 +27,3 @@ fish-voice-*.mp3
 
 # Executa virtualenv
 executas/**/.venv/
-# Executa binary build outputs (rebuilt via build_binary.sh; never commit)
-executas/**/build/
