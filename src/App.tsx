@@ -12,6 +12,7 @@ import { NotFoundPage } from "@/features/NotFoundPage";
 import { ExpensesProvider } from "@/services/expenses/useExpenses";
 import { ProfileProvider } from "@/services/profile/useProfile";
 import { BudgetsProvider } from "@/services/budgets/useBudgets";
+import { CatProvider } from "@/services/cat/useCat";
 
 export function App() {
   const [route, navigate] = useRoute();
@@ -21,9 +22,11 @@ export function App() {
       <ProfileProvider>
       <ExpensesProvider>
         <BudgetsProvider>
+          <CatProvider>
           <AppShell route={route} onNavigate={navigate}>
             {renderRoute(route, navigate)}
           </AppShell>
+          </CatProvider>
         </BudgetsProvider>
       </ExpensesProvider>
       </ProfileProvider>

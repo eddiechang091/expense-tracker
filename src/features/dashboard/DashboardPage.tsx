@@ -19,7 +19,8 @@ import { DEFAULT_CURRENCY } from "@/lib/constants";
 import { sortExpensesByRecency } from "@/lib/categories";
 import { CategoryBreakdown } from "./CategoryBreakdown";
 import { RecentExpenses } from "./RecentExpenses";
-import { MoneyBuddyLuckyCat } from "./MoneyBuddyLuckyCat";
+import { CatLauncher } from "@/features/cat/CatLauncher";
+import { CatCompanionModal } from "@/features/cat/CatCompanionModal";
 import { useInsight } from "@/features/ai/useInsight";
 import { DailyDelightCard } from "@/features/delight/DailyDelightCard";
 import { useGamification } from "@/features/gamification/useGamification";
@@ -74,6 +75,7 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
   const { streak, newlyUnlocked } = useGamification(expenses, budgets.length);
   const { profile } = useProfile();
   const [celebration, setCelebration] = useState(newlyUnlocked);
+  const [catOpen, setCatOpen] = useState(false);
 
   // Collect newly unlocked badges for the celebration modal.
   useEffect(() => {
@@ -150,13 +152,21 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
         </Card>
       ) : null}
 
-      {/* Money Buddy Lucky Cat — tap to hear the AI spending summary */}
+      {/* Interactive 2D lucky cat companion */}
       {monthExpenses.length > 0 ? (
-        <MoneyBuddyLuckyCat
-          insightResult={
-            insight.status === "ready" ? (insight.result ?? null) : null
-          }
-        />
+        <>
+          <CatLauncher onOpen={() => setCatOpen(true)} />
+          <CatCompanionModal
+            open={catOpen}
+            onClose={() => setCatOpen(false)}
+            insightResult={insight.status === "ready" ? (insight.result ?? null) : null}
+            expenseStats={{
+              streakDays: streak.current,
+              longestStreak: streak.longest,
+              totalExpenses: expenses.length,
+            }}
+          />
+        </>
       ) : null}
 
       {/* Prompt to set a budget if none exists */}
