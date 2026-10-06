@@ -43,10 +43,10 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
   const { state, loaded, checkIn, canCheckIn, feed, play, groom, cleanLitter, toggleSleep, maybeHappyDrop } = useCat();
   const { theme } = useTheme();
   const themeArt = THEME_CAT_ART[theme] ?? null;
-  const sceneBg = themeArt ? themeArt.scene : CAT_BACKGROUND;
   const { speak, isSpeaking } = useTTS();
 
   const [pose, setPose] = useState<CatPose>("idle");
+  const sceneBg = themeArt ? themeArt.poses[pose] : CAT_BACKGROUND;
   const [bubble, setBubble] = useState("Let's make today a great logging day!");
   const [picker, setPicker] = useState<PickerKind>(null);
   const [dropNotice, setDropNotice] = useState<CatItem | null>(null);
