@@ -9,6 +9,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useCat } from "@/services/cat/useCat";
 import { CAT_BACKGROUND, CAT_POSES } from "@/services/cat/catImages";
 import type { CatPose } from "@/services/cat/catImages";
+import { THEME_CAT_ART } from "@/services/theme/art/themeArt";
+import { useTheme } from "@/services/theme/useTheme";
 import { CAT_ITEMS, getItem } from "@/services/cat/items";
 import type { CatItem, ItemKind } from "@/services/cat/types";
 import { playCheckin, playMeow, playPop, playPurr, playSnore } from "@/services/cat/sounds";
@@ -39,6 +41,9 @@ const ACTION_LABELS: Record<string, string> = {
 
 export function CatCompanionModal({ open, onClose, insightResult, expenseStats }: CatCompanionModalProps) {
   const { state, loaded, checkIn, canCheckIn, feed, play, groom, cleanLitter, toggleSleep, maybeHappyDrop } = useCat();
+  const { theme } = useTheme();
+  const themeArt = THEME_CAT_ART[theme] ?? null;
+  const sceneBg = themeArt ? themeArt.scene : CAT_BACKGROUND;
   const { speak, isSpeaking } = useTTS();
 
   const [pose, setPose] = useState<CatPose>("idle");
@@ -198,12 +203,14 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
         </div>
 
         {/* Scene: cozy room + cat pose + speech bubble */}
-        <div className="cat-scene" style={CAT_BACKGROUND ? { backgroundImage: `url(${CAT_BACKGROUND})` } : undefined}>
+        <div className="cat-scene" style={sceneBg ? { backgroundImage: `url(${sceneBg})` } : undefined}>
           {bubble && <div className="cat-bubble">{bubble}</div>}
-          {CAT_POSES[pose] ? (
-            <img className="cat-figure" src={CAT_POSES[pose]} alt="Lucky cat" />
-          ) : (
-            <div className="cat-figure cat-figure--emoji">🐱</div>
+          {!themeArt && (
+            CAT_POSES[pose] ? (
+              <img className="cat-figure" src={CAT_POSES[pose]} alt="Lucky cat" />
+            ) : (
+              <div className="cat-figure cat-figure--emoji">🐱</div>
+            )
           )}
           {state.asleep && <div className="cat-sleep-z">💤</div>}
         </div>

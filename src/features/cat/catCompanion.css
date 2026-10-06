@@ -97,6 +97,7 @@
   padding: 8px 12px;
   font-size: 13px;
   line-height: 1.5;
+  color: #2b2a33;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   z-index: 2;
 }
@@ -357,15 +358,9 @@
   border-radius: 12px;
   padding: 7px 11px;
   font-size: 12px;
+  color: #2b2a33;
   white-space: nowrap;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
   pointer-events: none;
 }
 
-/* ─── Theme-matched cat ──────────────────────────────────────────────────── */
-/* The whole scene (room + cat) shifts hue per theme; the speech bubble is
-   white/translucent so it is unaffected. Cozy keeps the original artwork. */
-[data-theme="cyberpunk"] .cat-scene { filter: hue-rotate(-70deg) saturate(1.7); }
-[data-theme="verdant"] .cat-scene { filter: hue-rotate(100deg) saturate(1.1); }
-[data-theme="starry"] .cat-scene { filter: hue-rotate(180deg) saturate(0.9); }
-[data-theme="ocean"] .cat-scene { filter: hue-rotate(140deg) saturate(1.1); }

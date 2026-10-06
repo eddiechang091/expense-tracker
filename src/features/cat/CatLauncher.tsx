@@ -7,6 +7,8 @@ import { useEffect, useRef, useState } from "react";
 import type { PointerEvent } from "react";
 import { useCat } from "@/services/cat/useCat";
 import { CAT_POSES } from "@/services/cat/catImages";
+import { THEME_CAT_ART } from "@/services/theme/art/themeArt";
+import { useTheme } from "@/services/theme/useTheme";
 import { getKvStore } from "@/services/anna/storage";
 
 const CAT_LAUNCHER_POS_KEY = "ui:cat_launcher_position";
@@ -115,7 +117,9 @@ export function CatLauncher({ onOpen }: { onOpen: () => void }) {
     }
   }
 
-  const img = CAT_POSES.idle;
+  const { theme } = useTheme();
+  const themeArt = THEME_CAT_ART[theme] ?? null;
+  const img = themeArt ? themeArt.portrait : CAT_POSES.idle;
 
   return (
     <div className="cat-launcher-wrap" style={{ transform: `translate(${pos.dx}px, ${pos.dy}px)` }}>
