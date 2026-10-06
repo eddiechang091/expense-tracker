@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -21,9 +21,10 @@ import { CategoryBreakdown } from "./CategoryBreakdown";
 import { RecentExpenses } from "./RecentExpenses";
 import { MoneyBuddyLuckyCat } from "./MoneyBuddyLuckyCat";
 import { useInsight } from "@/features/ai/useInsight";
-import { useToast } from "@/components/ui/Toast";
 import { DailyDelightCard } from "@/features/delight/DailyDelightCard";
 import { useGamification } from "@/features/gamification/useGamification";
+import { BadgeCelebration } from "@/features/gamification/BadgeCelebration";
+import { useProfile } from "@/services/profile/useProfile";
 
 function periodText(delta: number, direction: string, currency: string): string {
   const amount = money(Math.abs(delta), currency);
@@ -68,17 +69,18 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
     [latestExpenseRef?.id]
   );
   const insight = useInsight(latestExpense, expenses, budgets);
-  const { notify } = useToast();
   // Badge unlocks are checked here so they fire wherever the user is;
   // the badges themselves live on the profile page.
-  const { newlyUnlocked } = useGamification(expenses, budgets.length);
+  const { streak, newlyUnlocked } = useGamification(expenses, budgets.length);
+  const { profile } = useProfile();
+  const [celebration, setCelebration] = useState(newlyUnlocked);
 
-  // Celebrate newly unlocked badges once.
+  // Collect newly unlocked badges for the celebration modal.
   useEffect(() => {
-    for (const b of newlyUnlocked) {
-      notify(`🏅 Badge unlocked: ${b.emoji} ${b.name}!`);
+    if (newlyUnlocked.length > 0) {
+      setCelebration((prev) => [...prev, ...newlyUnlocked]);
     }
-  }, [newlyUnlocked, notify]);
+  }, [newlyUnlocked]);
 
   if (isLoading) {
     return (
@@ -167,6 +169,15 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
             </Button>
           </div>
         </Card>
+      ) : null}
+
+      {celebration.length > 0 ? (
+        <BadgeCelebration
+          badges={celebration}
+          displayName={profile.displayName}
+          streakDays={streak.current}
+          onDone={() => setCelebration([])}
+        />
       ) : null}
     </>
   );
