@@ -12,6 +12,7 @@ import type { CatPose } from "@/services/cat/catImages";
 import { CAT_ITEMS, getItem } from "@/services/cat/items";
 import type { CatItem, ItemKind } from "@/services/cat/types";
 import { playCheckin, playMeow, playPop, playPurr, playSnore } from "@/services/cat/sounds";
+import { RewardCelebration } from "./RewardCelebration";
 import { useTTS } from "@/services/tts/useTTS";
 import { resultToSpeechText } from "@/services/tts/textUtils";
 import type { InsightResult } from "@/lib/aiSchema";
@@ -27,12 +28,12 @@ interface CatCompanionModalProps {
 type PickerKind = ItemKind | null;
 
 const ACTION_LABELS: Record<string, string> = {
-  feed: "喂食",
-  play: "玩耍",
-  groom: "按摩",
-  poop: "铲屎",
-  sleep: "睡觉",
-  wake: "唤醒",
+  feed: "Feed",
+  play: "Play",
+  groom: "Groom",
+  poop: "Litter",
+  sleep: "Sleep",
+  wake: "Wake",
   talk: "Talk",
 };
 
@@ -41,10 +42,11 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
   const { speak, isSpeaking } = useTTS();
 
   const [pose, setPose] = useState<CatPose>("idle");
-  const [bubble, setBubble] = useState("今天也要开开心心记账哦！");
+  const [bubble, setBubble] = useState("Let's make today a great logging day!");
   const [picker, setPicker] = useState<PickerKind>(null);
   const [dropNotice, setDropNotice] = useState<CatItem | null>(null);
   const [checkinItems, setCheckinItems] = useState<CatItem[] | null>(null);
+  const [rewardShow, setRewardShow] = useState<{ title: string; items: CatItem[] } | null>(null);
   const poseTimer = useRef<number | null>(null);
 
   // Reset when opened.
@@ -54,7 +56,7 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
       setPicker(null);
       setDropNotice(null);
       setCheckinItems(null);
-      setBubble(state.asleep ? "呼噜噜……（招财猫睡着了）" : "今天也要开开心心记账哦！");
+      setBubble(state.asleep ? "Zzz… (the lucky cat is asleep)" : "Let's make today a great logging day!");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open ]);
@@ -75,7 +77,7 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
     if (drop) {
       setDropNotice(drop);
       playPop();
-      setBubble(`哇！招财猫掉落了${drop.emoji}${drop.name}！`);
+      setBubble(`Wow! The lucky cat dropped ${drop.emoji} ${drop.name}!`);
       window.setTimeout(() => setDropNotice(null), 4000);
     }
   };
@@ -95,7 +97,10 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
     if (res.ok) {
       playCheckin();
       setCheckinItems(res.items);
-      setBubble(`签到成功！连续${res.streak}天，获得${res.items.length}件物品🎁`);
+      setBubble(`Checked in! ${res.streak}-day streak — you got ${res.items.length} items 🎁`);
+      if (res.items.length > 0) {
+        setRewardShow({ title: `Daily Check-in (Day ${res.streak})`, items: res.items });
+      }
     }
   };
 
@@ -106,21 +111,21 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
       if (used) {
         setPose("eat");
         playMeow();
-        setBubble(`好吃！${used.emoji}${used.name}真美味～`);
+        setBubble(`Yum! ${used.emoji} ${used.name} is delicious!`);
       }
     } else if (kind === "toy") {
       used = play(item.id);
       if (used) {
         setPose("play");
         playMeow();
-        setBubble(`好好玩！${used.emoji}${used.name}太有意思了！`);
+        setBubble(`So fun! The ${used.emoji} ${used.name} is the best!`);
       }
     } else {
       used = groom(item.id);
       if (used) {
         setPose("groom");
         playPurr();
-        setBubble(`舒服～${used.emoji}${used.name}按得真好，呼噜噜…`);
+        setBubble(`So relaxing… the ${used.emoji} ${used.name} feels amazing, purr…`);
       }
     }
     if (used) {
@@ -135,9 +140,9 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
     setPose("poop");
     if (found.length > 0) {
       playPop();
-      setBubble(`铲屎完成！竟然发现了${found.map((f) => `${f.emoji}${f.name}`).join("、")}✨`);
+      setBubble(`Litter box cleaned! Found ${found.map((f) => `${f.emoji} ${f.name}`).join(", ")} ✨`);
     } else {
-      setBubble("猫砂盆干干净净，招财猫很满意！");
+      setBubble("The litter box is sparkling clean — the cat approves!");
     }
     revertPose();
     checkDrop();
@@ -148,22 +153,22 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
     if (!state.asleep) {
       setPose("sleep");
       playSnore();
-      setBubble("呼噜噜……（招财猫睡着了，点唤醒叫它起床）");
+      setBubble("Zzz… (asleep — tap Wake to wake up)");
     } else {
       setPose("idle");
       playMeow();
-      setBubble("我醒啦！要一起玩吗？");
+      setBubble("I'm awake! Want to play?");
       revertPose();
     }
   };
 
   const doTalk = () => {
     if (!insightResult) {
-      setBubble("等我算算这个月的账单……");
+      setBubble("Let me crunch this month's numbers…");
       return;
     }
     setPose("talk");
-    setBubble("让我给你讲讲这个月的花费！");
+    setBubble("Let me tell you about this month's spending!");
     const text = resultToSpeechText(insightResult);
     try {
       speak(text);
@@ -178,25 +183,25 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
   const pickerItems = picker ? ownedByKind[picker] : [];
 
   return (
-    <div className="cat-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-label="招财猫互动">
+    <div className="cat-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-label="Lucky cat companion">
       <div className="cat-modal" onClick={(e) => e.stopPropagation()}>
         <div className="cat-modal-header">
-          <span className="cat-modal-title">🐱 招财猫</span>
-          <div className="cat-happiness" title={`开心值 ${state.happiness}`}>
-            <span className="cat-happiness-label">开心值</span>
+          <span className="cat-modal-title">🐱 Lucky Cat</span>
+          <div className="cat-happiness" title={`Joy ${state.happiness}`}>
+            <span className="cat-happiness-label">Joy</span>
             <div className="cat-happiness-bar">
               <div className="cat-happiness-fill" style={{ width: `${state.happiness}%` }} />
             </div>
             <span className="cat-happiness-num">{state.happiness}</span>
           </div>
-          <button className="cat-modal-close" onClick={onClose} aria-label="关闭">✕</button>
+          <button className="cat-modal-close" onClick={onClose} aria-label="Close">✕</button>
         </div>
 
         {/* Scene: cozy room + cat pose + speech bubble */}
         <div className="cat-scene" style={CAT_BACKGROUND ? { backgroundImage: `url(${CAT_BACKGROUND})` } : undefined}>
           {bubble && <div className="cat-bubble">{bubble}</div>}
           {CAT_POSES[pose] ? (
-            <img className="cat-figure" src={CAT_POSES[pose]} alt="招财猫" />
+            <img className="cat-figure" src={CAT_POSES[pose]} alt="Lucky cat" />
           ) : (
             <div className="cat-figure cat-figure--emoji">🐱</div>
           )}
@@ -205,22 +210,29 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
 
         {/* Drop / check-in notices */}
         {dropNotice && (
-          <div className="cat-notice">🎁 掉落：{dropNotice.emoji} {dropNotice.name}</div>
+          <div className="cat-notice">🎁 Dropped: {dropNotice.emoji} {dropNotice.name}</div>
         )}
         {checkinItems && (
-          <div className="cat-notice">📅 签到获得：{checkinItems.map((i) => `${i.emoji}${i.name}`).join("、")}</div>
+          <div className="cat-notice">📅 Check-in rewards: {checkinItems.map((i) => `${i.emoji} ${i.name}`).join(", ")}</div>
         )}
 
         {/* Item picker */}
         {picker && (
           <div className="cat-picker">
             <div className="cat-picker-title">
-              {picker === "food" ? "选择食物投喂" : picker === "toy" ? "选择玩具玩耍" : "选择护理用品"}
+              {picker === "food" ? "Pick a treat to feed" : picker === "toy" ? "Pick a toy to play with" : "Pick a care item"}
               <button className="cat-picker-close" onClick={() => setPicker(null)}>✕</button>
             </div>
+            <p className="muted" style={{ fontSize: 12, margin: "0 0 8px" }}>
+              {picker === "food"
+                ? "🍖 Food keeps your cat happy and fed."
+                : picker === "toy"
+                  ? "🪶 Toys are for playtime together!"
+                  : "🪮 Care items make grooming extra relaxing."}
+            </p>
             {pickerItems.length === 0 ? (
               <p className="muted" style={{ fontSize: 13 }}>
-                背包空空～每日签到可以领取物品哦！
+                Backpack is empty — check in daily to earn items!
               </p>
             ) : (
               <div className="cat-picker-items">
@@ -243,9 +255,9 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
 
         {/* Inventory strip */}
         <div className="cat-inventory">
-          <span className="cat-inventory-label">🎒 背包</span>
+          <span className="cat-inventory-label">🎒 Backpack</span>
           {Object.keys(state.inventory).length === 0 ? (
-            <span className="muted" style={{ fontSize: 12 }}>空 — 签到领取物品</span>
+            <span className="muted" style={{ fontSize: 12 }}>Empty — check in to earn items</span>
           ) : (
             <div className="cat-inventory-items">
               {Object.entries(state.inventory).map(([id, count]) => {
@@ -265,7 +277,7 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
         <div className="cat-actions">
           {canCheckIn && (
             <button className="cat-action cat-action--checkin" onClick={doCheckIn}>
-              📅 签到
+              📅 Check in
             </button>
           )}
           <button className="cat-action" onClick={() => setPicker("food")} disabled={state.asleep}>
@@ -287,8 +299,15 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
             🎧<span>{ACTION_LABELS.talk}</span>
           </button>
         </div>
-        {!loaded && <p className="muted" style={{ fontSize: 12 }}>加载中…</p>}
+        {!loaded && <p className="muted" style={{ fontSize: 12 }}>Loading…</p>}
       </div>
+      {rewardShow && (
+        <RewardCelebration
+          title={rewardShow.title}
+          items={rewardShow.items}
+          onDone={() => setRewardShow(null)}
+        />
+      )}
     </div>
   );
 }

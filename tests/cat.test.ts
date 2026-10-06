@@ -15,7 +15,7 @@ describe("cat item catalog", () => {
   });
 
   it("getItem resolves known ids", () => {
-    expect(getItem("food-tuna")?.name).toBe("金枪鱼罐头");
+    expect(getItem("food-tuna")?.name).toBe("Tuna Can");
     expect(getItem("nope")).toBeUndefined();
   });
 

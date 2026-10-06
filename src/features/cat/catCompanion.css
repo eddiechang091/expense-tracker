@@ -337,3 +337,13 @@
   font-size: 13px;
   white-space: nowrap;
 }
+
+/* Reward celebration */
+.celebration-purpose {
+  font-size: 13px;
+  color: #b3541e;
+  background: #fff8e8;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 8px 0 0;
+}

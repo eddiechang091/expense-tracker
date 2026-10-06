@@ -99,7 +99,7 @@ export function CatLauncher({ onOpen }: { onOpen: () => void }) {
     <div className="cat-launcher-wrap" style={{ transform: `translate(${pos.dx}px, ${pos.dy}px)` }}>
       <button
         className="cat-launcher"
-        aria-label="打开招财猫互动"
+        aria-label="Open lucky cat companion"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
