@@ -61,7 +61,7 @@ print("protocol smoke test OK")
 EOF
 fi
 
-if [[ "${1:-}" == "--package" || "${1:-}" == "--test" ]]; then
+if [[ "${1:-}" == "--package" ]]; then
   PLATFORM="$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/aarch64/arm64/;s/x86_64/x86_64/')"
   # normalize to Anna platform names
   case "$PLATFORM" in
@@ -71,6 +71,18 @@ if [[ "${1:-}" == "--package" || "${1:-}" == "--test" ]]; then
     msys*|mingw*|cygwin*|windows*) A="windows-x86_64" ;;
     *) A="$PLATFORM" ;;
   esac
-  (cd "$BUILD_DIR/dist" && tar czf "$BIN_NAME-$A.tar.gz" "$BIN_NAME")
+  # Layout matches executa.json binary_artifacts entrypoint ("bin/<name>"):
+  #   <name>-<platform>.tar.gz
+  #   └── bin/
+  #       └── <name> (or <name>.exe on Windows)
+  PKGDIR="$BUILD_DIR/pkg"
+  rm -rf "$PKGDIR"
+  mkdir -p "$PKGDIR/bin"
+  if [[ "$A" == "windows-x86_64" ]]; then
+    cp "$BUILD_DIR/dist/$BIN_NAME.exe" "$PKGDIR/bin/"
+  else
+    cp "$BUILD_DIR/dist/$BIN_NAME" "$PKGDIR/bin/"
+  fi
+  (cd "$PKGDIR" && tar czf "$BUILD_DIR/dist/$BIN_NAME-$A.tar.gz" bin)
   echo "packaged: $BUILD_DIR/dist/$BIN_NAME-$A.tar.gz"
 fi

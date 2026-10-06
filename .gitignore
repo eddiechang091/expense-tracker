@@ -7,6 +7,8 @@ data/*.db*
 executas/**/.env
 .clinerules/*
 .github/*
+!.github/workflows/
+!.github/workflows/*
 .vscode/*
 docs/*
 !docs/WORKING-TRACK.md
@@ -16,6 +18,9 @@ bundle/
 output/
 .anna/
 dist/
+build/
+executas/*/build/
+executas/*/dist/
 coverage/
 __pycache__/
 
