@@ -16,13 +16,16 @@ import { CatProvider } from "@/services/cat/useCat";
 import { ThemeProvider, useTheme } from "@/services/theme/useTheme";
 
 function ThemedBackground() {
-  const { background } = useTheme();
+  const { theme, background } = useTheme();
   return (
-    <div
-      className="theme-bg"
-      aria-hidden="true"
-      style={{ backgroundImage: `url("${background}")` }}
-    />
+    <>
+      <div
+        className="theme-bg"
+        aria-hidden="true"
+        style={{ backgroundImage: `url("${background}")` }}
+      />
+      {theme === "starry" && <div className="theme-bg-twinkle" aria-hidden="true" />}
+    </>
   );
 }
 

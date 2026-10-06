@@ -148,3 +148,17 @@
   opacity: var(--theme-bg-opacity);
   pointer-events: none;
 }
+
+/* Twinkling star layer — starry theme only */
+.theme-bg-twinkle {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27240%27%20height%3D%27240%27%3E%3Ccircle%20cx%3D%2730%27%20cy%3D%2740%27%20r%3D%271.6%27%20fill%3D%27white%27%2F%3E%3Ccircle%20cx%3D%27120%27%20cy%3D%2720%27%20r%3D%271%27%20fill%3D%27white%27%20opacity%3D%270.7%27%2F%3E%3Ccircle%20cx%3D%27200%27%20cy%3D%2780%27%20r%3D%272%27%20fill%3D%27white%27%2F%3E%3Ccircle%20cx%3D%2780%27%20cy%3D%27140%27%20r%3D%271.2%27%20fill%3D%27white%27%20opacity%3D%270.8%27%2F%3E%3Ccircle%20cx%3D%27170%27%20cy%3D%27180%27%20r%3D%271.5%27%20fill%3D%27white%27%2F%3E%3Ccircle%20cx%3D%2740%27%20cy%3D%27210%27%20r%3D%271%27%20fill%3D%27white%27%20opacity%3D%270.6%27%2F%3E%3Ccircle%20cx%3D%27220%27%20cy%3D%27220%27%20r%3D%271.3%27%20fill%3D%27white%27%20opacity%3D%270.75%27%2F%3E%3Ccircle%20cx%3D%27150%27%20cy%3D%27110%27%20r%3D%270.9%27%20fill%3D%27white%27%20opacity%3D%270.5%27%2F%3E%3C%2Fsvg%3E");
+  animation: star-twinkle 3.2s ease-in-out infinite alternate;
+}
+@keyframes star-twinkle {
+  from { opacity: 0.25; }
+  to { opacity: 0.95; }
+}
