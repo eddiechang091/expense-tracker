@@ -986,3 +986,65 @@ a:hover { text-decoration: underline; }
   color: var(--text-inverse);
 }
 .heatmap-months--year { grid-auto-columns: 15px; }
+
+/* ─── Badge celebration ─────────────────────────────────────────────── */
+.celebration-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(43, 42, 51, 0.55);
+  backdrop-filter: blur(4px);
+  animation: celebration-fade var(--dur-normal) var(--ease);
+}
+.celebration-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 32px 28px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  animation: celebration-pop var(--dur-celebrate) var(--ease);
+}
+.celebration-kicker {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--primary-strong);
+  margin-bottom: 8px;
+}
+.celebration-emoji {
+  font-size: 84px;
+  line-height: 1.2;
+  animation: celebration-bounce 900ms var(--ease) 150ms both;
+}
+.celebration-name { font-size: 24px; font-weight: 800; margin-top: 8px; }
+.celebration-hint { font-size: 14px; margin-top: 6px; }
+.celebration-progress { font-size: 12px; margin-top: 10px; }
+.celebration-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 20px;
+}
+@keyframes celebration-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes celebration-pop {
+  0% { opacity: 0; transform: scale(0.85) translateY(16px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes celebration-bounce {
+  0% { transform: scale(0); }
+  55% { transform: scale(1.25); }
+  75% { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .celebration-overlay, .celebration-card, .celebration-emoji { animation: none; }
+}
