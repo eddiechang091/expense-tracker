@@ -16,9 +16,16 @@ interface Pos {
   dy: number;
 }
 
+const BUBBLE_MESSAGES = [
+  "👋 Look at me!",
+  "🎧 Tap me — let's hang out!",
+];
+
 export function CatLauncher({ onOpen }: { onOpen: () => void }) {
   const { canCheckIn } = useCat();
   const [pos, setPos] = useState<Pos>({ dx: 0, dy: 0 });
+  const [bubbleOn, setBubbleOn] = useState(true);
+  const [bubbleIndex, setBubbleIndex] = useState(0);
   const posRef = useRef(pos);
   posRef.current = pos;
   const dragRef = useRef<{
@@ -42,6 +49,21 @@ export function CatLauncher({ onOpen }: { onOpen: () => void }) {
         /* keep default */
       }
     })();
+  }, []);
+
+  // Idle bubble: visible 5s out of every 20s (same rhythm as the old 3D cat).
+  useEffect(() => {
+    setBubbleOn(true);
+    const t1 = window.setTimeout(() => setBubbleOn(false), 5000);
+    const iv = window.setInterval(() => {
+      setBubbleIndex((i) => i + 1);
+      setBubbleOn(true);
+      window.setTimeout(() => setBubbleOn(false), 5000);
+    }, 20000);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearInterval(iv);
+    };
   }, []);
 
   function onPointerDown(e: PointerEvent<HTMLButtonElement>) {
@@ -110,7 +132,11 @@ export function CatLauncher({ onOpen }: { onOpen: () => void }) {
           <span className="cat-launcher-emoji">🐱</span>
         )}
       </button>
-      {canCheckIn && <span className="cat-launcher-badge">!</span>}
+      {bubbleOn && (
+        <div className="cat-launcher-bubble" role="status">
+          {canCheckIn ? "📅 Check-in time!" : BUBBLE_MESSAGES[bubbleIndex % BUBBLE_MESSAGES.length]}
+        </div>
+      )}
     </div>
   );
 }

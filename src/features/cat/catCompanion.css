@@ -347,3 +347,17 @@
   padding: 8px 12px;
   margin: 8px 0 0;
 }
+
+/* Floating launcher idle bubble */
+.cat-launcher-bubble {
+  position: absolute;
+  bottom: 84px;
+  right: 0;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 12px;
+  padding: 7px 11px;
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+  pointer-events: none;
+}
