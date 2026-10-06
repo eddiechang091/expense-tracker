@@ -5,6 +5,22 @@ Newest entries first. Times in America/Halifax.
 
 ---
 
+## 2026-10-06 09:40 — fix/avatar-inline → PR #24 (open, awaiting review)
+
+**Broken avatar images.** The 10 avatar webp files were emitted to
+`bundle/assets/`, but the Anna host only serves the bundle's top-level
+files — avatar URLs 404'd and profile avatars rendered as broken images.
+
+- `vite.config.ts`: `assetsInlineLimit` 0 → 32768, so the 10 small
+  avatars inline into `app.js` as base64 data URIs (no network request).
+- `avatars.ts`: explicit static imports (the `import.meta.glob` query
+  `?inline` was passed through literally and did not inline).
+
+**Verification:** fresh build clean, all 10 avatars as data URIs in
+`app.js`, no webp in `bundle/assets/`; `tsc` clean, 215 tests pass.
+
+---
+
 ## 2026-10-06 00:30 — feat/profile-polish → PR (open, awaiting review)
 
 **Profile polish + draggable cat** (user review feedback).
