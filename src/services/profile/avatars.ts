@@ -1,20 +1,10 @@
 // Curated avatar gallery (cute -> cyberpunk) for the profile picker.
 //
-// The images are imported with `?url` so they become base64 data URIs
-// baked into the JS bundle. This keeps avatars working even when the host
-// only serves the bundle's top-level files (no `assets/` subdirectory).
-// Total: 10 x 256px webp, ~70KB -> ~95KB base64.
+// Images live in `avatarData.ts` as base64 data URIs (generated from the
+// 256px webp files). They are baked into the JS bundle, so avatars render
+// with zero extra file requests.
 
-import avatarCatCute from "/src/assets/avatars/avatar-cat-cute.webp?url";
-import avatarLuckyCat from "/src/assets/avatars/avatar-lucky-cat.webp?url";
-import avatarFox from "/src/assets/avatars/avatar-fox.webp?url";
-import avatarPanda from "/src/assets/avatars/avatar-panda.webp?url";
-import avatarShiba from "/src/assets/avatars/avatar-shiba.webp?url";
-import avatarRobot from "/src/assets/avatars/avatar-robot.webp?url";
-import avatarAstroCat from "/src/assets/avatars/avatar-astro-cat.webp?url";
-import avatarDragon from "/src/assets/avatars/avatar-dragon.webp?url";
-import avatarSamurai from "/src/assets/avatars/avatar-samurai.webp?url";
-import avatarNeonGhost from "/src/assets/avatars/avatar-neon-ghost.webp?url";
+import { AVATAR_DATA_URIS } from "./avatarData";
 
 export interface AvatarOption {
   id: string;
@@ -23,18 +13,23 @@ export interface AvatarOption {
   emoji: string; // legacy fallback, also used while the image loads
 }
 
-export const AVATAR_OPTIONS: AvatarOption[] = [
-  { id: "avatar-cat-cute", label: "Mochi Cat", src: avatarCatCute, emoji: "🐱" },
-  { id: "avatar-lucky-cat", label: "Lucky Cat", src: avatarLuckyCat, emoji: "🐱" },
-  { id: "avatar-fox", label: "Fox", src: avatarFox, emoji: "🦊" },
-  { id: "avatar-panda", label: "Panda", src: avatarPanda, emoji: "🐼" },
-  { id: "avatar-shiba", label: "Shiba", src: avatarShiba, emoji: "🐶" },
-  { id: "avatar-robot", label: "Bolt", src: avatarRobot, emoji: "🤖" },
-  { id: "avatar-astro-cat", label: "Astro Cat", src: avatarAstroCat, emoji: "🐱" },
-  { id: "avatar-dragon", label: "Dragon", src: avatarDragon, emoji: "🐲" },
-  { id: "avatar-samurai", label: "Neon Samurai", src: avatarSamurai, emoji: "🥷" },
-  { id: "avatar-neon-ghost", label: "Neon Ghost", src: avatarNeonGhost, emoji: "👻" },
+const META: Array<{ id: string; label: string; emoji: string }> = [
+  { id: "avatar-cat-cute", label: "Mochi Cat", emoji: "🐱" },
+  { id: "avatar-lucky-cat", label: "Lucky Cat", emoji: "🐱" },
+  { id: "avatar-fox", label: "Fox", emoji: "🦊" },
+  { id: "avatar-panda", label: "Panda", emoji: "🐼" },
+  { id: "avatar-shiba", label: "Shiba", emoji: "🐶" },
+  { id: "avatar-robot", label: "Bolt", emoji: "🤖" },
+  { id: "avatar-astro-cat", label: "Astro Cat", emoji: "🐱" },
+  { id: "avatar-dragon", label: "Dragon", emoji: "🐲" },
+  { id: "avatar-samurai", label: "Neon Samurai", emoji: "🥷" },
+  { id: "avatar-neon-ghost", label: "Neon Ghost", emoji: "👻" },
 ];
+
+export const AVATAR_OPTIONS: AvatarOption[] = META.map((m) => ({
+  ...m,
+  src: AVATAR_DATA_URIS[m.id] ?? "",
+})).filter((a) => a.src.length > 0);
 
 export const AVATARS: AvatarOption[] = AVATAR_OPTIONS;
 
