@@ -105,6 +105,8 @@ export function ProfilePage() {
   const years = useMemo(() => availableYears(expenses), [expenses]);
   const [year, setYear] = useState<number | null>(null);
   const [shareBadge, setShareBadge] = useState<BadgeDef | null>(null);
+  const [avatarModalOpen, setAvatarModalOpen] = useState(false);
+  const [avatarDraft, setAvatarDraft] = useState<string | null>(null);
   const activeYear = year ?? years[0] ?? new Date().getFullYear();
 
   const streak = useMemo(() => computeStreak(expenses), [expenses]);
@@ -116,9 +118,19 @@ export function ProfilePage() {
 
       <Card>
         <div className="profile-head">
-          <div className="profile-avatar" aria-hidden="true">
+          <button
+            type="button"
+            className="profile-avatar profile-avatar--clickable"
+            onClick={() => {
+              setAvatarDraft(profile.avatarId ?? null);
+              setAvatarModalOpen(true);
+            }}
+            aria-label="Change avatar"
+            title="Change avatar"
+          >
             <Avatar avatarId={profile.avatarId} avatarEmoji={profile.avatarEmoji} size={68} />
-          </div>
+            <span className="profile-avatar-edit" aria-hidden="true">✏️</span>
+          </button>
           <div className="profile-identity">
             {editing ? (
               <div className="profile-edit">
@@ -219,6 +231,42 @@ export function ProfilePage() {
         )}
         <HeatmapYear year={activeYear} expenses={expenses} />
       </Card>
+
+      {avatarModalOpen && (
+        <div className="avatar-modal-backdrop" onClick={() => setAvatarModalOpen(false)} role="dialog" aria-modal="true" aria-label="Choose avatar">
+          <div className="avatar-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ fontSize: 15, margin: "0 0 12px" }}>Choose your avatar</h3>
+            <div className="profile-avatar-pick" role="group" aria-label="Choose avatar">
+              {AVATARS.map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  className={`avatar-choice${avatarDraft === a.id ? " is-selected" : ""}`}
+                  onClick={() => setAvatarDraft(a.id)}
+                  aria-label={a.label}
+                  title={a.label}
+                >
+                  <img src={a.src} alt="" aria-hidden="true" width={48} height={48} style={{ borderRadius: "50%", objectFit: "cover" }} />
+                </button>
+              ))}
+            </div>
+            <div className="row" style={{ marginTop: 14, justifyContent: "flex-end" }}>
+              <Button size="sm" variant="ghost" onClick={() => setAvatarModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  if (avatarDraft) update({ avatarId: avatarDraft });
+                  setAvatarModalOpen(false);
+                }}
+              >
+                Confirm
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Card>
         <BadgesRow unlockedIds={unlockedIds} onSelect={setShareBadge} />

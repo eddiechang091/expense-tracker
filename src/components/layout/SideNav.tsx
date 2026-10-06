@@ -22,9 +22,11 @@ export function SideNav({
         onClick={() => onNavigate("/profile")}
         aria-label="Open profile"
       >
-        <span className="profile-chip-avatar"><Avatar avatarId={profile.avatarId} avatarEmoji={profile.avatarEmoji} size={30} /></span>
+        <span className="profile-chip-avatar">
+          <Avatar avatarId={profile.avatarId} avatarEmoji={profile.avatarEmoji} size={64} />
+          <span className="profile-chip-status" title={status.label}>{status.emoji}</span>
+        </span>
         <span className="profile-chip-name">{profile.displayName}</span>
-        <span className="profile-chip-status" title={status.label} aria-hidden="true">{status.emoji}</span>
       </button>
       {NAV_ITEMS.map((item) => {
         const Icon = item.icon;
