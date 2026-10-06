@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -10,8 +10,6 @@ import {
   calculateBudgetProgress,
   comparePeriods,
   currentMonthKey,
-  dailyTotals,
-  detectMeaningfulChanges,
   filterByMonth,
   sumExpenses,
   totalsByCategory,
@@ -21,16 +19,12 @@ import { DEFAULT_CURRENCY } from "@/lib/constants";
 import { sortExpensesByRecency } from "@/lib/categories";
 import { CategoryBreakdown } from "./CategoryBreakdown";
 import { RecentExpenses } from "./RecentExpenses";
-import { SpendingChanges } from "./SpendingChanges";
 import { MoneyBuddyLuckyCat } from "./MoneyBuddyLuckyCat";
 import { useInsight } from "@/features/ai/useInsight";
-import { useToast } from "@/components/ui/Toast";
 import { DailyDelightCard } from "@/features/delight/DailyDelightCard";
-import { StreakCard } from "@/features/gamification/StreakCard";
-import { BadgesRow } from "@/features/gamification/BadgesRow";
 import { useGamification } from "@/features/gamification/useGamification";
-
-const SpendingChart = lazy(() => import("@/components/ui/SpendingChart"));
+import { BadgeCelebration } from "@/features/gamification/BadgeCelebration";
+import { useProfile } from "@/services/profile/useProfile";
 
 function periodText(delta: number, direction: string, currency: string): string {
   const amount = money(Math.abs(delta), currency);
@@ -63,9 +57,6 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
   const monthTotal = sumExpenses(monthExpenses);
   const comparison = comparePeriods(expenses, now);
   const catTotals = totalsByCategory(monthExpenses);
-  const chartData = dailyTotals(monthExpenses, now);
-  const previousMonthExpenses = comparison ? filterByMonth(expenses, comparison.previousKey) : [];
-  const changes = detectMeaningfulChanges(monthExpenses, previousMonthExpenses, { maxResults: 3 });
 
   // AI insight — triggered by the most recently added expense.
   // Memoize by ID to avoid re-firing on every render when the same expense
@@ -78,15 +69,18 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
     [latestExpenseRef?.id]
   );
   const insight = useInsight(latestExpense, expenses, budgets);
-  const { notify } = useToast();
-  const { streak, heatmap, unlockedIds, newlyUnlocked } = useGamification(expenses, budgets.length);
+  // Badge unlocks are checked here so they fire wherever the user is;
+  // the badges themselves live on the profile page.
+  const { streak, newlyUnlocked } = useGamification(expenses, budgets.length);
+  const { profile } = useProfile();
+  const [celebration, setCelebration] = useState(newlyUnlocked);
 
-  // Celebrate newly unlocked badges once.
+  // Collect newly unlocked badges for the celebration modal.
   useEffect(() => {
-    for (const b of newlyUnlocked) {
-      notify(`🏅 Badge unlocked: ${b.emoji} ${b.name}!`);
+    if (newlyUnlocked.length > 0) {
+      setCelebration((prev) => [...prev, ...newlyUnlocked]);
     }
-  }, [newlyUnlocked, notify]);
+  }, [newlyUnlocked]);
 
   if (isLoading) {
     return (
@@ -104,19 +98,12 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
 
   return (
     <>
-      <PageHeader
-        title="Dashboard"
-        lede={
-          insight.status === "ready" && insight.result?.headline
-            ? insight.result.headline
-            : `${monthLabel} · good to see you`
-        }
-      />
+      <PageHeader title="Dashboard" lede={monthLabel} />
 
       {/* Daily delight */}
       <DailyDelightCard />
 
-      {/* Hero: monthly total + budget progress */}
+      {/* Hero: monthly total + budget progress + recent expenses */}
       <Card>
         {monthExpenses.length === 0 ? (
           <EmptyState
@@ -146,57 +133,20 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
                 </p>
               </div>
             ) : null}
-            <div className="row" style={{ marginTop: 14 }}>
-              <Button variant="secondary" size="sm" onClick={() => onNavigate("/add-expense")}>
-                Add expense
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => onNavigate("/expenses")}>
-                View all
-              </Button>
-            </div>
+            {recentExpenses.length > 0 ? (
+              <div className="dashboard-recent">
+                <p className="dashboard-recent-title muted">Recent</p>
+                <RecentExpenses expenses={recentExpenses} onNavigate={onNavigate} />
+              </div>
+            ) : null}
           </div>
         )}
       </Card>
-
-      {/* Streak + badges */}
-      {monthExpenses.length > 0 ? (
-        <>
-          <Card>
-            <StreakCard streak={streak} heatmap={heatmap} />
-          </Card>
-          <Card>
-            <BadgesRow unlockedIds={unlockedIds} />
-          </Card>
-        </>
-      ) : null}
 
       {/* Category breakdown */}
       {catTotals.length > 0 ? (
         <Card title="Where it went">
           <CategoryBreakdown totals={catTotals} monthTotal={monthTotal} currency={currency} />
-        </Card>
-      ) : null}
-
-      {/* Spending changes vs previous month */}
-      {changes.length > 0 ? (
-        <Card title="What changed">
-          <SpendingChanges changes={changes} currency={currency} />
-        </Card>
-      ) : null}
-
-      {/* Daily spending chart (lazy) */}
-      {monthExpenses.length > 0 ? (
-        <Card title="Daily spending">
-          <Suspense fallback={<LoadingState label="Loading chart…" />}>
-            <SpendingChart data={chartData} currency={currency} />
-          </Suspense>
-        </Card>
-      ) : null}
-
-      {/* Recent expenses */}
-      {recentExpenses.length > 0 ? (
-        <Card title="Recent">
-          <RecentExpenses expenses={recentExpenses} onNavigate={onNavigate} />
         </Card>
       ) : null}
 
@@ -219,6 +169,15 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
             </Button>
           </div>
         </Card>
+      ) : null}
+
+      {celebration.length > 0 ? (
+        <BadgeCelebration
+          badges={celebration}
+          displayName={profile.displayName}
+          streakDays={streak.current}
+          onDone={() => setCelebration([])}
+        />
       ) : null}
     </>
   );
