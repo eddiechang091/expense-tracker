@@ -1,7 +1,8 @@
-import { Plus, Wallet } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useProfile } from "@/services/profile/useProfile";
 import { statusDef } from "@/services/profile/profile";
 import { Button } from "@/components/ui/Button";
+import { Avatar } from "@/components/ui/Avatar";
 import { NAV_ITEMS } from "./navItems";
 
 export function SideNav({
@@ -15,29 +16,13 @@ export function SideNav({
   const status = statusDef(profile.status);
   return (
     <nav className="side-nav" aria-label="Primary">
-      <a
-        className="brand"
-        href="#/dashboard"
-        onClick={(event) => {
-          event.preventDefault();
-          onNavigate("/dashboard");
-        }}
-      >
-        <span className="brand-mark" aria-hidden="true">
-          <Wallet size={18} />
-        </span>
-        <span>
-          <span className="brand-name">Money Companion</span>
-          <span className="brand-sub" style={{ display: "block" }}>Friendly money tracking</span>
-        </span>
-      </a>
       <button
         type="button"
-        className={route === "/profile" ? "profile-chip is-active" : "profile-chip"}
+        className="profile-chip"
         onClick={() => onNavigate("/profile")}
         aria-label="Open profile"
       >
-        <span className="profile-chip-avatar" aria-hidden="true">{profile.avatarEmoji}</span>
+        <span className="profile-chip-avatar"><Avatar avatarId={profile.avatarId} avatarEmoji={profile.avatarEmoji} size={30} /></span>
         <span className="profile-chip-name">{profile.displayName}</span>
         <span className="profile-chip-status" title={status.label} aria-hidden="true">{status.emoji}</span>
       </button>

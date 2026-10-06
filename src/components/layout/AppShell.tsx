@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Plus } from "lucide-react";
 import { useProfile } from "@/services/profile/useProfile";
+import { Avatar } from "@/components/ui/Avatar";
 import { SideNav } from "./SideNav";
 import { BottomNav } from "./BottomNav";
 
@@ -45,7 +46,7 @@ export function AppShell({
         aria-label="Open profile"
         onClick={() => onNavigate("/profile")}
       >
-        <span aria-hidden="true">{profile.avatarEmoji}</span>
+        <Avatar avatarId={profile.avatarId} avatarEmoji={profile.avatarEmoji} size={36} />
       </button>
       <BottomNav route={route} onNavigate={onNavigate} />
     </div>

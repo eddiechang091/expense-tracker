@@ -29,13 +29,16 @@ export const PROFILE_STATUSES: ProfileStatusDef[] = [
 
 export interface UserProfile {
   displayName: string;
-  /** Emoji used as the avatar until the platform offers real avatars. */
+  /** Curated gallery avatar id (see avatars.ts). */
+  avatarId: string;
+  /** Legacy emoji avatar — used when avatarId is unset. */
   avatarEmoji: string;
   status: ProfileStatus;
 }
 
 export const DEFAULT_PROFILE: UserProfile = {
   displayName: "Money Buddy",
+  avatarId: "avatar-lucky-cat",
   avatarEmoji: "😊",
   status: "available",
 };
