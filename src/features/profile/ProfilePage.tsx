@@ -16,6 +16,8 @@ import {
   yearStats,
 } from "@/lib/streak";
 import { BadgesRow } from "@/features/gamification/BadgesRow";
+import { BadgeCelebration } from "@/features/gamification/BadgeCelebration";
+import type { BadgeDef } from "@/features/gamification/badges";
 import { useGamification } from "@/features/gamification/useGamification";
 import { useBudgets } from "@/services/budgets/useBudgets";
 
@@ -101,6 +103,7 @@ export function ProfilePage() {
 
   const years = useMemo(() => availableYears(expenses), [expenses]);
   const [year, setYear] = useState<number | null>(null);
+  const [shareBadge, setShareBadge] = useState<BadgeDef | null>(null);
   const activeYear = year ?? years[0] ?? new Date().getFullYear();
 
   const streak = useMemo(() => computeStreak(expenses), [expenses]);
@@ -216,8 +219,17 @@ export function ProfilePage() {
       </Card>
 
       <Card>
-        <BadgesRow unlockedIds={unlockedIds} />
+        <BadgesRow unlockedIds={unlockedIds} onSelect={setShareBadge} />
       </Card>
+
+      {shareBadge ? (
+        <BadgeCelebration
+          badges={[shareBadge]}
+          displayName={profile.displayName}
+          streakDays={streak.current}
+          onDone={() => setShareBadge(null)}
+        />
+      ) : null}
     </>
   );
 }

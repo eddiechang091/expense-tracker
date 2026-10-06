@@ -1048,3 +1048,6 @@ a:hover { text-decoration: underline; }
 @media (prefers-reduced-motion: reduce) {
   .celebration-overlay, .celebration-card, .celebration-emoji { animation: none; }
 }
+.badge.is-clickable { cursor: pointer; }
+.badge.is-clickable:hover .badge-emoji { transform: scale(1.08); }
+.badge.is-clickable .badge-emoji { transition: transform var(--dur-fast) var(--ease); }

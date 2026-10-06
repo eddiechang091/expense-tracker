@@ -10,6 +10,7 @@ import { ProfilePage } from "@/features/profile/ProfilePage";
 import { SettingsPage } from "@/features/settings/SettingsPage";
 import { NotFoundPage } from "@/features/NotFoundPage";
 import { ExpensesProvider } from "@/services/expenses/useExpenses";
+import { ProfileProvider } from "@/services/profile/useProfile";
 import { BudgetsProvider } from "@/services/budgets/useBudgets";
 
 export function App() {
@@ -17,6 +18,7 @@ export function App() {
 
   return (
     <ToastProvider>
+      <ProfileProvider>
       <ExpensesProvider>
         <BudgetsProvider>
           <AppShell route={route} onNavigate={navigate}>
@@ -24,6 +26,7 @@ export function App() {
           </AppShell>
         </BudgetsProvider>
       </ExpensesProvider>
+      </ProfileProvider>
     </ToastProvider>
   );
 }
