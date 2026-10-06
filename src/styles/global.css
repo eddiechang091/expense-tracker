@@ -1051,3 +1051,11 @@ a:hover { text-decoration: underline; }
 .badge.is-clickable { cursor: pointer; }
 .badge.is-clickable:hover .badge-emoji { transform: scale(1.08); }
 .badge.is-clickable .badge-emoji { transition: transform var(--dur-fast) var(--ease); }
+
+/* ─── Draggable lucky cat ───────────────────────────────────────────── */
+.lucky-cat-3d-stage--draggable {
+  touch-action: none; /* let pointer events handle touch drags */
+  cursor: grab;
+}
+.lucky-cat-3d-stage--draggable:active { cursor: grabbing; }
+.lucky-cat-3d-stage--draggable.is-waiting { cursor: default; }

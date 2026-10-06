@@ -352,6 +352,16 @@ export async function isFishAvailable(): Promise<boolean> {
   );
 }
 
+/**
+ * True when a Fish Audio API key is configured (Vite env or Anna Storage).
+ * Used by the UI to decide whether to nudge the user to set one up.
+ * Does not reveal the key itself.
+ */
+export async function hasFishApiKey(): Promise<boolean> {
+  const key = await getFishApiKey();
+  return key.length > 0;
+}
+
 /** Save the Fish Audio API key to Anna Storage (user-entered credential). */
 export async function saveFishApiKey(key: string): Promise<void> {
   const store = await getKvStore();

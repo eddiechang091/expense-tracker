@@ -9,7 +9,7 @@ export interface AvatarDef {
   src: string;
 }
 
-const modules = import.meta.glob<string>("/src/assets/avatars/avatar-*.png", {
+const modules = import.meta.glob<string>("/src/assets/avatars/avatar-*.webp", {
   eager: true,
   query: "?url",
   import: "default",
@@ -42,7 +42,7 @@ const LABELS: Record<string, string> = {
 };
 
 export const AVATARS: AvatarDef[] = ORDER.flatMap((id) => {
-  const key = Object.keys(modules).find((k) => k.endsWith(`/${id}.png`));
+  const key = Object.keys(modules).find((k) => k.endsWith(`/${id}.webp`));
   if (!key) return [];
   return [{ id, label: LABELS[id] ?? id, src: modules[key] }];
 });

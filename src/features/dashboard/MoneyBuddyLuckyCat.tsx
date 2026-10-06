@@ -1,21 +1,31 @@
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
-import type { KeyboardEvent } from "react";
+import type { KeyboardEvent, PointerEvent } from "react";
 import type { InsightResult } from "@/lib/aiSchema";
 import { useTTS } from "@/services/tts/useTTS";
 import { resultToSpeechText } from "@/services/tts/textUtils";
+import { hasFishApiKey } from "@/services/tts/providers/fish";
+import { getKvStore } from "@/services/anna/storage";
 import { CAT_SIZE } from "./luckyCat3d/constants";
 import type { LuckyCatCanvasApi } from "./luckyCat3d/LuckyCatCanvas";
 
 // ---------------------------------------------------------------------------
 // Money Buddy Lucky Cat — 3D companion (Three.js, lazy-loaded chunk).
 //
-// The cat is a fixed bottom-right companion like the BrightNest panda:
+// The cat is a draggable bottom-right companion like the BrightNest panda:
 // it stays on screen while the page scrolls, waves its signature
 // beckoning paw, and shows the idle bubble above its head 5s out of
-// every 20s (same rhythm as the panda). Tap the cat to hear the AI
-// spending summary (Fish TTS), tap again to stop.
+// every 20s (same rhythm as the panda). Drag it anywhere — the position
+// persists. Tap the cat to hear the AI spending summary (Fish TTS),
+// tap again to stop.
 // ---------------------------------------------------------------------------
 const LuckyCatCanvas = lazy(() => import("./luckyCat3d/LuckyCatCanvas"));
+
+const CAT_POSITION_KEY = "ui:lucky_cat_position";
+
+interface CatPosition {
+  dx: number;
+  dy: number;
+}
 
 function CatFallback() {
   return (
@@ -28,16 +38,25 @@ function CatFallback() {
 }
 
 // ---------------------------------------------------------------------------
-// Speech bubble (above the head)
+// Speech bubble (above the head) — rotates through invite messages.
 // ---------------------------------------------------------------------------
+const INVITE_MESSAGES = [
+  "🎧 Tap me — I have something to tell you!",
+  "🔑 Want my real voice? Add your Fish API key in Settings!",
+];
+
 function SpeechBubble({
   speaking,
   hasResult,
   inviteOn,
+  inviteIndex,
+  fishKeyMissing,
 }: {
   speaking: boolean;
   hasResult: boolean;
   inviteOn: boolean;
+  inviteIndex: number;
+  fishKeyMissing: boolean;
 }) {
   if (speaking) {
     return (
@@ -54,11 +73,12 @@ function SpeechBubble({
     );
   }
   if (!inviteOn) return null;
-  return (
-    <div className="cat-bubble">
-      🎧 Tap me — I have something to tell you!
-    </div>
-  );
+  // Only show the Fish setup nudge when no key is configured; otherwise
+  // always show the tap-me invite.
+  const message = fishKeyMissing
+    ? INVITE_MESSAGES[inviteIndex % INVITE_MESSAGES.length]
+    : INVITE_MESSAGES[0];
+  return <div className="cat-bubble">{message}</div>;
 }
 
 // ---------------------------------------------------------------------------
@@ -74,6 +94,48 @@ export function MoneyBuddyLuckyCat({ insightResult }: MoneyBuddyLuckyCatProps) {
   const canvasApiRef = useRef<LuckyCatCanvasApi | null>(null);
   // idle invitation bubble: visible 5s out of every 20s (panda rhythm)
   const [inviteOn, setInviteOn] = useState(true);
+  const [inviteIndex, setInviteIndex] = useState(0);
+  const [fishKeyMissing, setFishKeyMissing] = useState(false);
+  // Draggable position (offset from the default bottom-right spot).
+  const [pos, setPos] = useState<CatPosition>({ dx: 0, dy: 0 });
+  const posRef = useRef(pos);
+  posRef.current = pos;
+  const dragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    origDx: number;
+    origDy: number;
+    moved: boolean;
+  } | null>(null);
+
+  // Restore the saved position.
+  useEffect(() => {
+    (async () => {
+      try {
+        const store = await getKvStore();
+        const saved = await store.get<CatPosition>(CAT_POSITION_KEY);
+        if (saved && typeof saved.dx === "number" && typeof saved.dy === "number") {
+          setPos({ dx: saved.dx, dy: saved.dy });
+        }
+      } catch {
+        /* keep default */
+      }
+    })();
+  }, []);
+
+  // Check once whether a Fish key is configured (for the bubble nudge).
+  useEffect(() => {
+    let cancelled = false;
+    hasFishApiKey()
+      .then((has) => {
+        if (!cancelled) setFishKeyMissing(!has);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const speechText =
     insightResult && !insightResult.isFallback
@@ -93,6 +155,7 @@ export function MoneyBuddyLuckyCat({ insightResult }: MoneyBuddyLuckyCatProps) {
     setInviteOn(true);
     const t1 = window.setTimeout(() => setInviteOn(false), 5000);
     const iv = window.setInterval(() => {
+      setInviteIndex((i) => i + 1);
       setInviteOn(true);
       window.setTimeout(() => setInviteOn(false), 5000);
     }, 20000);
@@ -101,6 +164,60 @@ export function MoneyBuddyLuckyCat({ insightResult }: MoneyBuddyLuckyCatProps) {
       window.clearInterval(iv);
     };
   }, [awaitingConfirmation, isSpeaking, hasResult]);
+
+  // --- Drag handling -------------------------------------------------------
+  // Pointer events on the stage: a press that moves < 6px is a tap
+  // (toggles speech); anything more drags the cat. Position persists.
+  function onPointerDown(e: PointerEvent<HTMLDivElement>) {
+    dragRef.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      origDx: pos.dx,
+      origDy: pos.dy,
+      moved: false,
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function onPointerMove(e: PointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    const dx = drag.origDx + (e.clientX - drag.startX);
+    const dy = drag.origDy + (e.clientY - drag.startY);
+    if (Math.abs(e.clientX - drag.startX) + Math.abs(e.clientY - drag.startY) > 6) {
+      drag.moved = true;
+    }
+    if (drag.moved) {
+      // Clamp so the cat stays reachable on screen.
+      const maxDx = window.innerWidth - CAT_SIZE - 36;
+      const maxDy = window.innerHeight - CAT_SIZE - 36;
+      setPos({
+        dx: Math.min(0, Math.max(-maxDx, dx)),
+        dy: Math.min(0, Math.max(-maxDy, dy)),
+      });
+    }
+  }
+
+  function onPointerUp(e: PointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    dragRef.current = null;
+    if (!drag) return;
+    try {
+      e.currentTarget.releasePointerCapture(drag.pointerId);
+    } catch {
+      /* noop */
+    }
+    if (drag.moved) {
+      // Persist the dropped position.
+      const next = { ...posRef.current };
+      getKvStore()
+        .then((store) => store.set(CAT_POSITION_KEY, next))
+        .catch(() => {});
+    } else {
+      handleActivate();
+    }
+  }
 
   function handleActivate() {
     if (awaitingConfirmation) {
@@ -135,7 +252,11 @@ export function MoneyBuddyLuckyCat({ insightResult }: MoneyBuddyLuckyCatProps) {
   // used silently once a key is set.
   if (awaitingConfirmation) {
     return (
-      <div className="lucky-cat-3d-wrap" role="alert">
+      <div
+        className="lucky-cat-3d-wrap"
+        role="alert"
+        style={{ transform: `translate(${pos.dx}px, ${pos.dy}px)` }}
+      >
         <div className="cat-bubble cat-bubble--error">
           <span className="cat-bubble-error-title">⚠️ My Fish voice ran into a problem</span>
           <span className="cat-bubble-error-detail">{state.message}</span>
@@ -170,16 +291,27 @@ export function MoneyBuddyLuckyCat({ insightResult }: MoneyBuddyLuckyCatProps) {
   }
 
   return (
-    <div className="lucky-cat-3d-wrap">
-      <SpeechBubble speaking={isSpeaking} hasResult={hasResult} inviteOn={inviteOn} />
+    <div
+      className="lucky-cat-3d-wrap"
+      style={{ transform: `translate(${pos.dx}px, ${pos.dy}px)` }}
+    >
+      <SpeechBubble
+        speaking={isSpeaking}
+        hasResult={hasResult}
+        inviteOn={inviteOn}
+        inviteIndex={inviteIndex}
+        fishKeyMissing={fishKeyMissing}
+      />
       <div
         role="button"
         tabIndex={hasResult ? 0 : -1}
         aria-label={ariaLabel}
         aria-pressed={isSpeaking}
-        onClick={handleActivate}
         onKeyDown={handleKeyDown}
-        className={`lucky-cat-3d-stage${isSpeaking ? " is-speaking" : ""}${!hasResult ? " is-waiting" : ""}`}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        className={`lucky-cat-3d-stage lucky-cat-3d-stage--draggable${isSpeaking ? " is-speaking" : ""}${!hasResult ? " is-waiting" : ""}`}
       >
         <Suspense fallback={<CatFallback />}>
           <LuckyCatCanvas ref={canvasApiRef} speaking={isSpeaking} />
