@@ -5,6 +5,25 @@ Newest entries first. Times in America/Halifax.
 
 ---
 
+## 2026-10-06 00:30 — feat/profile-polish → PR (open, awaiting review)
+
+**Profile polish + draggable cat** (user review feedback).
+
+- ProfileProvider: shared profile state — status/name/avatar changes
+  propagate to the sidebar chip instantly (fixes stale status bug).
+- SideNav: removed Money Companion brand block; chip no longer
+  highlights on click (GitHub style).
+- BadgesRow: unlocked badges clickable → share dialog.
+- 10 curated avatars (cute → cyberpunk) in `src/assets/avatars/`;
+  gallery picker; image with emoji fallback.
+- Lucky cat draggable (6px tap threshold, position persisted);
+  idle bubble rotates tap-invite + Fish API key setup nudge
+  (only when no key configured).
+
+**Verification:** `tsc` clean, `vitest` 219/219, `vite build` clean.
+
+---
+
 ## 2026-10-06 00:15 — feat/badge-share → PR #20 (open, awaiting review)
 
 **Badge celebration + shareable snapshots** (user request).
