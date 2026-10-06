@@ -14,7 +14,7 @@ export default defineConfig({
     outDir: "bundle",
     emptyOutDir: true,
     target: "es2022",
-    assetsInlineLimit: 32768, // inline the 3-13KB avatar webp files as data URIs
+    assetsInlineLimit: 0,
     rollupOptions: {
       output: {
         entryFileNames: "app.js",
