@@ -5,6 +5,28 @@ Newest entries first. Times in America/Halifax.
 
 ---
 
+## 2026-10-06 11:40 — feat/cat-companion → PR (open, awaiting review)
+
+**2D interactive lucky cat** (replaces the 3D cat).
+
+- `CatLauncher`: floating draggable 2D cat on the dashboard; red dot
+  when daily check-in is available. Opens the companion modal.
+- `CatCompanionModal`: semi-transparent modal with a cozy cat-room scene;
+  the cat pose changes per interaction (idle/eat/play/groom/sleep/talk/poop).
+- Interactions: 喂食/玩耍/按摩 (consume inventory items), 铲屎 (may find
+  items), 睡觉/唤醒， Talk (existing TTS spending summary).
+- Daily check-in: 1-3 random items (+streak bonus); 18-item catalog
+  (7 foods, 4 care, 7 toys, common/rare/epic).
+- Happiness 0-100 (decays 2/hr); >80 may drop a random item.
+- Sounds: Web Audio synthesized meow/purr/snore/pop/check-in arpeggio.
+- Milestones (profile, next to badges): log 3/7/14/30 days, 50/100
+  expenses, 7-day check-in — rewards scale with history length.
+- Artwork embedded as data URIs in TS (binary-push lesson applied).
+
+**Verification:** `tsc` clean, `vitest` 223/223, `vite build` clean.
+
+---
+
 ## 2026-10-06 09:40 — fix/avatar-inline → PR #24 (open, awaiting review)
 
 **Broken avatar images.** The 10 avatar webp files were emitted to

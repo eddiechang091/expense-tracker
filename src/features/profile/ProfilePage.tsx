@@ -16,6 +16,7 @@ import {
   yearStats,
 } from "@/lib/streak";
 import { BadgesRow } from "@/features/gamification/BadgesRow";
+import { MilestoneRewards } from "@/features/cat/MilestoneRewards";
 import { Avatar } from "@/components/ui/Avatar";
 import { AVATARS } from "@/services/profile/avatars";
 import { BadgeCelebration } from "@/features/gamification/BadgeCelebration";
@@ -221,6 +222,16 @@ export function ProfilePage() {
 
       <Card>
         <BadgesRow unlockedIds={unlockedIds} onSelect={setShareBadge} />
+      </Card>
+
+      <Card>
+        <MilestoneRewards
+          stats={{
+            streakDays: streak.current,
+            longestStreak: streak.longest,
+            totalExpenses: expenses.length,
+          }}
+        />
       </Card>
 
       {shareBadge ? (
