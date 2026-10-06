@@ -6,7 +6,6 @@ import { ExpensesPage } from "@/features/expenses/ExpensesPage";
 import { AddExpensePage } from "@/features/expenses/AddExpensePage";
 import { BudgetsPage } from "@/features/budgets/BudgetsPage";
 import { MoneyBuddyPage } from "@/features/ai/MoneyBuddyPage";
-import { ProfilePage } from "@/features/profile/ProfilePage";
 import { SettingsPage } from "@/features/settings/SettingsPage";
 import { NotFoundPage } from "@/features/NotFoundPage";
 import { ExpensesProvider } from "@/services/expenses/useExpenses";
@@ -40,8 +39,6 @@ function renderRoute(route: string, navigate: (path: string) => void) {
       return <BudgetsPage />;
     case "/ai":
       return <MoneyBuddyPage />;
-    case "/profile":
-      return <ProfilePage />;
     case "/settings":
       return <SettingsPage />;
     default:
