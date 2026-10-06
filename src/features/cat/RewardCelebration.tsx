@@ -4,7 +4,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import type { CatItem } from "@/services/cat/types";
-import { playPop } from "@/services/cat/sounds";
 
 function itemPurpose(item: CatItem): string {
   switch (item.kind) {
@@ -43,7 +42,6 @@ export function RewardCelebration({
 
   useEffect(() => {
     // Little pop each time a new item is revealed.
-    playPop();
   }, [index]);
 
   if (!item) return null;

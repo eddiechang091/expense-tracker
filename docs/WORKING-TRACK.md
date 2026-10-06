@@ -5,6 +5,50 @@ Newest entries first. Times in America/Halifax.
 
 ---
 
+## 2026-10-06 16:30 — feat/warm-theme → PR #28 (open, awaiting review)
+
+**Per-theme reaction poses (24 new scenes).**
+
+- Each of the 4 theme cats now has 6 reaction scenes (eat/play/groom/
+  sleep/talk/poop) matching its character and environment — the modal
+  swaps artwork on every interaction, just like the cozy cat's 7 poses.
+- `THEME_CAT_ART` carries `poses: Record<CatPose, string>` (idle = base
+  scene); one pose per TS file for reliable transfer.
+- Fixed washed-out text in dark themes: `.cat-modal` and `.milestone-row`
+  pin dark default text on their fixed cream/white surfaces.
+
+## 2026-10-06 15:45 — feat/warm-theme → PR #28 (open, awaiting review)
+
+**App theme system (5 themes) + per-theme cat companions.**
+
+- Theme system: Cozy Home (default), Cyberpunk, Verdant, Starry Night, Deep
+  Ocean. Settings → Preferences hosts the picker; persists to
+  `settings:theme`; applies via `data-theme` on `<html>` (no flash).
+- Warm recolor: global `--primary` purple → warm coral `#ff7b54` (+amber
+  `--secondary`); cascades to buttons/links/nav/focus/progress/brand.
+- "Add expense" + mobile FAB use `linear-gradient(var(--secondary),
+  var(--primary))` so they adapt per theme; white label + text-shadow.
+- Page backgrounds: 5 subtle AI-generated images (data URIs, low opacity);
+  starry gets an animated twinkle layer; ocean/starry are scene-rich v2 art.
+- Per-theme cats (AI, one kawaii style): cyberpunk white cat + neon
+  sunglasses + guitar on rock stage; verdant orange cat + hiking hat +
+  dragonfly net + water bottle in meadow; starry white cat in astronaut
+  suit; ocean white cat in diving suit with jellyfish/fish/coral. Each
+  theme ships a launcher portrait + modal scene; cozy keeps 7 poses.
+- Speech bubbles: explicit dark text for readability on all themes.
+- Removed the "Your data" placeholder card from Settings.
+- `tests/theme.test.ts`: 6 tests (themes, backgrounds, cat art).
+
+## 2026-10-06 14:35 — feat/profile-redesign → PR #27 (merged)
+
+- Sidebar: GitHub-style vertical profile chip (64px avatar, status emoji
+  badge overlaid bottom-right, bold name below; transparent bg matching
+  the white sidebar).
+- Profile page: avatar click opens a modal gallery with Cancel/Confirm;
+  selected avatar shows a dark overlay + ✓.
+
+---
+
 ## 2026-10-06 11:40 — feat/cat-companion → PR (open, awaiting review)
 
 **2D interactive lucky cat** (replaces the 3D cat).

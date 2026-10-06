@@ -14,6 +14,7 @@
 
 .cat-modal {
   background: #fffaf3;
+  color: #2b2a33;
   border-radius: 20px;
   max-width: 420px;
   width: 100%;
@@ -97,6 +98,7 @@
   padding: 8px 12px;
   font-size: 13px;
   line-height: 1.5;
+  color: #2b2a33;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   z-index: 2;
 }
@@ -321,6 +323,7 @@
   border: 1px solid #f0e6d8;
   border-radius: 10px;
   background: #fff;
+  color: #2b2a33;
 }
 .milestone-row.is-unlocked { border-color: #f5d98b; background: #fffbe8; }
 .milestone-row.is-claimed { opacity: 0.65; }
@@ -357,7 +360,9 @@
   border-radius: 12px;
   padding: 7px 11px;
   font-size: 12px;
+  color: #2b2a33;
   white-space: nowrap;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
   pointer-events: none;
 }
+

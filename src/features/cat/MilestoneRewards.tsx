@@ -8,7 +8,6 @@ import { useState } from "react";
 import { useCat } from "@/services/cat/useCat";
 import { CAT_MILESTONES } from "@/services/cat/milestones";
 import type { CatItem, ExpenseStats } from "@/services/cat/types";
-import { playPop } from "@/services/cat/sounds";
 import { RewardCelebration } from "./RewardCelebration";
 
 export function MilestoneRewards({ stats }: { stats: ExpenseStats }) {
@@ -18,7 +17,6 @@ export function MilestoneRewards({ stats }: { stats: ExpenseStats }) {
   const doClaim = (id: string, title: string) => {
     const items = claimMilestone(id, stats);
     if (items && items.length > 0) {
-      playPop();
       setCelebration({ title, items });
     }
   };

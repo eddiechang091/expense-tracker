@@ -9,9 +9,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useCat } from "@/services/cat/useCat";
 import { CAT_BACKGROUND, CAT_POSES } from "@/services/cat/catImages";
 import type { CatPose } from "@/services/cat/catImages";
+import { THEME_CAT_ART } from "@/services/theme/art/themeArt";
+import { useTheme } from "@/services/theme/useTheme";
 import { CAT_ITEMS, getItem } from "@/services/cat/items";
 import type { CatItem, ItemKind } from "@/services/cat/types";
-import { playCheckin, playMeow, playPop, playPurr, playSnore } from "@/services/cat/sounds";
 import { RewardCelebration } from "./RewardCelebration";
 import { useTTS } from "@/services/tts/useTTS";
 import { resultToSpeechText } from "@/services/tts/textUtils";
@@ -39,9 +40,12 @@ const ACTION_LABELS: Record<string, string> = {
 
 export function CatCompanionModal({ open, onClose, insightResult, expenseStats }: CatCompanionModalProps) {
   const { state, loaded, checkIn, canCheckIn, feed, play, groom, cleanLitter, toggleSleep, maybeHappyDrop } = useCat();
+  const { theme } = useTheme();
+  const themeArt = THEME_CAT_ART[theme] ?? null;
   const { speak, isSpeaking } = useTTS();
 
   const [pose, setPose] = useState<CatPose>("idle");
+  const sceneBg = themeArt ? themeArt.poses[pose] : CAT_BACKGROUND;
   const [bubble, setBubble] = useState("Let's make today a great logging day!");
   const [picker, setPicker] = useState<PickerKind>(null);
   const [dropNotice, setDropNotice] = useState<CatItem | null>(null);
@@ -76,7 +80,6 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
     const drop = maybeHappyDrop(expenseStats);
     if (drop) {
       setDropNotice(drop);
-      playPop();
       setBubble(`Wow! The lucky cat dropped ${drop.emoji} ${drop.name}!`);
       window.setTimeout(() => setDropNotice(null), 4000);
     }
@@ -95,7 +98,6 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
   const doCheckIn = () => {
     const res = checkIn();
     if (res.ok) {
-      playCheckin();
       setCheckinItems(res.items);
       setBubble(`Checked in! ${res.streak}-day streak — you got ${res.items.length} items 🎁`);
       if (res.items.length > 0) {
@@ -110,21 +112,18 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
       used = feed(item.id);
       if (used) {
         setPose("eat");
-        playMeow();
         setBubble(`Yum! ${used.emoji} ${used.name} is delicious!`);
       }
     } else if (kind === "toy") {
       used = play(item.id);
       if (used) {
         setPose("play");
-        playMeow();
         setBubble(`So fun! The ${used.emoji} ${used.name} is the best!`);
       }
     } else {
       used = groom(item.id);
       if (used) {
         setPose("groom");
-        playPurr();
         setBubble(`So relaxing… the ${used.emoji} ${used.name} feels amazing, purr…`);
       }
     }
@@ -139,7 +138,6 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
     const found = cleanLitter();
     setPose("poop");
     if (found.length > 0) {
-      playPop();
       setBubble(`Litter box cleaned! Found ${found.map((f) => `${f.emoji} ${f.name}`).join(", ")} ✨`);
     } else {
       setBubble("The litter box is sparkling clean — the cat approves!");
@@ -152,11 +150,9 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
     toggleSleep();
     if (!state.asleep) {
       setPose("sleep");
-      playSnore();
       setBubble("Zzz… (asleep — tap Wake to wake up)");
     } else {
       setPose("idle");
-      playMeow();
       setBubble("I'm awake! Want to play?");
       revertPose();
     }
@@ -198,12 +194,14 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
         </div>
 
         {/* Scene: cozy room + cat pose + speech bubble */}
-        <div className="cat-scene" style={CAT_BACKGROUND ? { backgroundImage: `url(${CAT_BACKGROUND})` } : undefined}>
+        <div className="cat-scene" style={sceneBg ? { backgroundImage: `url(${sceneBg})` } : undefined}>
           {bubble && <div className="cat-bubble">{bubble}</div>}
-          {CAT_POSES[pose] ? (
-            <img className="cat-figure" src={CAT_POSES[pose]} alt="Lucky cat" />
-          ) : (
-            <div className="cat-figure cat-figure--emoji">🐱</div>
+          {!themeArt && (
+            CAT_POSES[pose] ? (
+              <img className="cat-figure" src={CAT_POSES[pose]} alt="Lucky cat" />
+            ) : (
+              <div className="cat-figure cat-figure--emoji">🐱</div>
+            )
           )}
           {state.asleep && <div className="cat-sleep-z">💤</div>}
         </div>
