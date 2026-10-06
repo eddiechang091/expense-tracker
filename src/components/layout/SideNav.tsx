@@ -2,6 +2,7 @@ import { Plus } from "lucide-react";
 import { useProfile } from "@/services/profile/useProfile";
 import { statusDef } from "@/services/profile/profile";
 import { Button } from "@/components/ui/Button";
+import { Avatar } from "@/components/ui/Avatar";
 import { NAV_ITEMS } from "./navItems";
 
 export function SideNav({
@@ -21,7 +22,7 @@ export function SideNav({
         onClick={() => onNavigate("/profile")}
         aria-label="Open profile"
       >
-        <span className="profile-chip-avatar" aria-hidden="true">{profile.avatarEmoji}</span>
+        <span className="profile-chip-avatar"><Avatar avatarId={profile.avatarId} avatarEmoji={profile.avatarEmoji} size={30} /></span>
         <span className="profile-chip-name">{profile.displayName}</span>
         <span className="profile-chip-status" title={status.label} aria-hidden="true">{status.emoji}</span>
       </button>
