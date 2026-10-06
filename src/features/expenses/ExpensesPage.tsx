@@ -1,13 +1,21 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
+import { Card } from "@/components/ui/Card";
+import { LoadingState } from "@/components/ui/States";
+import { currentMonthKey, dailyTotals, filterByMonth } from "@/lib/analytics";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { useExpenses } from "@/services/expenses/useExpenses";
 import { ExpenseList } from "./ExpenseList";
 
+const SpendingChart = lazy(() => import("@/components/ui/SpendingChart"));
+
 export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => void }) {
   const { status, expenses, error, refresh, deleteExpense, isPending } = useExpenses();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const currency = expenses[0]?.currency ?? "CAD";
+  const monthExpenses = filterByMonth(expenses, currentMonthKey());
+  const chartData = dailyTotals(monthExpenses, currentMonthKey());
 
   return (
     <>
@@ -20,6 +28,13 @@ export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => voi
           </Button>
         }
       />
+      {monthExpenses.length > 0 ? (
+        <Card title="Daily spending">
+          <Suspense fallback={<LoadingState label="Loading chart…" />}>
+            <SpendingChart data={chartData} currency={currency} />
+          </Suspense>
+        </Card>
+      ) : null}
       <ExpenseList
         status={status}
         expenses={expenses}
