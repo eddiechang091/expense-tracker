@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { THEMES, themeDef, isThemeId, DEFAULT_THEME } from "../src/services/theme/themes";
 import { THEME_BACKGROUNDS } from "../src/services/theme/themeBackgrounds";
+import { THEME_CAT_ART } from "../src/services/theme/art/themeArt";
 
 describe("themes", () => {
   it("has five themes with cozy as default", () => {
@@ -42,6 +43,18 @@ describe("themes", () => {
       const bg = THEME_BACKGROUNDS[t.id];
       expect(bg.startsWith("data:image/jpeg;base64,")).toBe(true);
       expect(bg.length).toBeGreaterThan(1000);
+    }
+  });
+
+  it("non-cozy themes have embedded portrait + scene cat art", () => {
+    // Cozy reuses the original 7-pose artwork; every other theme ships
+    // its own portrait (launcher) and scene (modal).
+    expect(THEME_CAT_ART.cozy).toBeUndefined();
+    for (const id of ["cyberpunk", "verdant", "starry", "ocean"] as const) {
+      const art = THEME_CAT_ART[id];
+      expect(art).toBeDefined();
+      expect(art!.portrait.startsWith("data:image/webp;base64,")).toBe(true);
+      expect(art!.scene.startsWith("data:image/webp;base64,")).toBe(true);
     }
   });
 });
