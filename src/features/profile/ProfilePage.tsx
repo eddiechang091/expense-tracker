@@ -1,0 +1,223 @@
+import { useMemo, useState } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { useExpenses } from "@/services/expenses/useExpenses";
+import { useProfile } from "@/services/profile/useProfile";
+import {
+  PROFILE_STATUSES,
+  statusDef,
+  type ProfileStatus,
+} from "@/services/profile/profile";
+import {
+  availableYears,
+  buildYearHeatmap,
+  computeStreak,
+  yearStats,
+} from "@/lib/streak";
+import { BadgesRow } from "@/features/gamification/BadgesRow";
+import { useGamification } from "@/features/gamification/useGamification";
+import { useBudgets } from "@/services/budgets/useBudgets";
+
+const AVATAR_CHOICES = ["😊", "🐱", "🦊", "🐼", "🦁", "🐸", "🦄", "🐙", "🌻", "🍀", "⭐", "🎈"];
+
+function HeatmapYear({
+  year,
+  expenses,
+}: {
+  year: number;
+  expenses: Parameters<typeof buildYearHeatmap>[0];
+}) {
+  const weeks = useMemo(() => buildYearHeatmap(expenses, year), [expenses, year]);
+  const stats = useMemo(() => yearStats(expenses, year), [expenses, year]);
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  // Month label per column: show when the first day of the column is in a new month.
+  let prevMonth = -1;
+  const labels = weeks.map((week) => {
+    const firstInYear = week.find((d) => !d.placeholder);
+    const m = firstInYear ? Number(firstInYear.date.slice(5, 7)) - 1 : -1;
+    if (m !== prevMonth && m >= 0) {
+      prevMonth = m;
+      return months[m];
+    }
+    return null;
+  });
+
+  return (
+    <div>
+      <div className="profile-stats">
+        <div className="profile-stat">
+          <span className="profile-stat-value">{stats.daysLogged}</span>
+          <span className="profile-stat-label">days logged</span>
+        </div>
+        <div className="profile-stat">
+          <span className="profile-stat-value">{stats.expenseCount}</span>
+          <span className="profile-stat-label">expenses</span>
+        </div>
+        <div className="profile-stat">
+          <span className="profile-stat-value">{stats.longestStreak}</span>
+          <span className="profile-stat-label">longest streak</span>
+        </div>
+      </div>
+      <div className="heatmap" role="img" aria-label={`Activity in ${year}`}>
+        <div className="heatmap-months heatmap-months--year">
+          {labels.map((label, i) => (
+            <span key={i} className="heatmap-month">{label ?? ""}</span>
+          ))}
+        </div>
+        <div className="heatmap-grid">
+          {weeks.map((week, wi) => (
+            <div key={wi} className="heatmap-week">
+              {week.map((day) => (
+                <span
+                  key={day.date}
+                  title={day.placeholder ? undefined : `${day.date}: ${day.count} logged`}
+                  className={`heatmap-day hm-${day.level}${day.placeholder ? " is-placeholder" : ""}`}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="heatmap-legend">
+          <span>Less</span>
+          {[0, 1, 2, 3, 4].map((l) => (
+            <span key={l} className={`heatmap-day hm-${l} is-legend`} />
+          ))}
+          <span>More</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ProfilePage() {
+  const { expenses } = useExpenses();
+  const { budgets } = useBudgets();
+  const { profile, loaded, update } = useProfile();
+  const { unlockedIds } = useGamification(expenses, budgets.length);
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState("");
+
+  const years = useMemo(() => availableYears(expenses), [expenses]);
+  const [year, setYear] = useState<number | null>(null);
+  const activeYear = year ?? years[0] ?? new Date().getFullYear();
+
+  const streak = useMemo(() => computeStreak(expenses), [expenses]);
+  const status = statusDef(profile.status);
+
+  return (
+    <>
+      <PageHeader title="Profile" lede="Your money-logging journey." />
+
+      <Card>
+        <div className="profile-head">
+          <div className="profile-avatar" aria-hidden="true">
+            {profile.avatarEmoji}
+          </div>
+          <div className="profile-identity">
+            {editing ? (
+              <div className="profile-edit">
+                <input
+                  className="profile-name-input"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                  maxLength={24}
+                  aria-label="Display name"
+                />
+                <div className="profile-avatar-pick" role="group" aria-label="Choose avatar">
+                  {AVATAR_CHOICES.map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      className={`avatar-choice${profile.avatarEmoji === emoji ? " is-selected" : ""}`}
+                      onClick={() => update({ avatarEmoji: emoji })}
+                      aria-label={`Avatar ${emoji}`}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+                <div className="row">
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      const trimmed = name.trim();
+                      if (trimmed) update({ displayName: trimmed });
+                      setEditing(false);
+                    }}
+                  >
+                    Save
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h2 className="profile-name">{loaded ? profile.displayName : "…"}</h2>
+                <button
+                  type="button"
+                  className="profile-status"
+                  onClick={() => setEditing(true)}
+                  title="Edit profile"
+                >
+                  <span aria-hidden="true">{status.emoji}</span> {status.label}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+        {!editing && (
+          <div className="profile-status-row" role="group" aria-label="Set status">
+            {PROFILE_STATUSES.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                className={`status-chip${profile.status === s.id ? " is-active" : ""}`}
+                onClick={() => update({ status: s.id as ProfileStatus })}
+                title={s.label}
+              >
+                <span aria-hidden="true">{s.emoji}</span> {s.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card
+        title={`${activeYear} activity`}
+        action={
+          <div className="year-tabs" role="tablist" aria-label="Select year">
+            {years.map((y) => (
+              <button
+                key={y}
+                type="button"
+                role="tab"
+                aria-selected={y === activeYear}
+                className={`year-tab${y === activeYear ? " is-active" : ""}`}
+                onClick={() => setYear(y)}
+              >
+                {y}
+              </button>
+            ))}
+          </div>
+        }
+      >
+        {streak.current > 0 && (
+          <p className="profile-streak-line">
+            🔥 <strong>{streak.current}-day streak</strong>
+            {streak.aliveButIdleToday ? " — log today to keep it going!" : " — keep it up!"}
+          </p>
+        )}
+        <HeatmapYear year={activeYear} expenses={expenses} />
+      </Card>
+
+      <Card>
+        <BadgesRow unlockedIds={unlockedIds} />
+      </Card>
+    </>
+  );
+}

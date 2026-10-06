@@ -1,4 +1,6 @@
 import { Plus, Wallet } from "lucide-react";
+import { useProfile } from "@/services/profile/useProfile";
+import { statusDef } from "@/services/profile/profile";
 import { Button } from "@/components/ui/Button";
 import { NAV_ITEMS } from "./navItems";
 
@@ -9,6 +11,8 @@ export function SideNav({
   route: string;
   onNavigate: (path: string) => void;
 }) {
+  const { profile } = useProfile();
+  const status = statusDef(profile.status);
   return (
     <nav className="side-nav" aria-label="Primary">
       <a
@@ -27,6 +31,16 @@ export function SideNav({
           <span className="brand-sub" style={{ display: "block" }}>Friendly money tracking</span>
         </span>
       </a>
+      <button
+        type="button"
+        className={route === "/profile" ? "profile-chip is-active" : "profile-chip"}
+        onClick={() => onNavigate("/profile")}
+        aria-label="Open profile"
+      >
+        <span className="profile-chip-avatar" aria-hidden="true">{profile.avatarEmoji}</span>
+        <span className="profile-chip-name">{profile.displayName}</span>
+        <span className="profile-chip-status" title={status.label} aria-hidden="true">{status.emoji}</span>
+      </button>
       {NAV_ITEMS.map((item) => {
         const Icon = item.icon;
         const active = route === item.path;
