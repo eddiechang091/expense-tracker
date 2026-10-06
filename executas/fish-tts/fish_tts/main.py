@@ -60,7 +60,11 @@ def _load_env_file() -> None:
     - Strips inline comments and surrounding quotes.
     - Fails silently so missing .env never crashes the process.
     """
-    env_path = Path(__file__).parent.parent / ".env"
+    env_path = (
+        Path(sys.executable).parent / ".env"
+        if getattr(sys, "frozen", False)
+        else Path(__file__).parent.parent / ".env"
+    )
     api_key_present_before = bool(os.environ.get("FISH_AUDIO_API_KEY", "").strip())
     loaded = False
     try:
