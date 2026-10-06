@@ -7,28 +7,28 @@ import type { CatItem } from "./types";
 
 export const CAT_ITEMS: CatItem[] = [
   // ---- Foods (7) ----
-  { id: "food-kibble", name: "Kibble", emoji: "🍪", kind: "food", rarity: "common", happiness: 8, blurb: "Crunchy everyday staple" },
-  { id: "food-chicken", name: "Chicken Strips", emoji: "🍗", kind: "food", rarity: "common", happiness: 10, blurb: "Lean and protein-packed" },
-  { id: "food-tuna", name: "Tuna Can", emoji: "🐟", kind: "food", rarity: "rare", happiness: 14, blurb: "An irresistible aroma" },
-  { id: "food-salmon", name: "Salmon Fillet", emoji: "🍣", kind: "food", rarity: "rare", happiness: 16, blurb: "Glistening ocean delicacy" },
-  { id: "food-strip", name: "Cat Puree", emoji: "🧃", kind: "food", rarity: "common", happiness: 9, blurb: "Squeeze and watch it vanish" },
-  { id: "food-pudding", name: "Cat Pudding", emoji: "🍮", kind: "food", rarity: "rare", happiness: 13, blurb: "Wobbly, silky dessert" },
-  { id: "food-dried-fish", name: "Freeze-Dried Fish", emoji: "🐠", kind: "food", rarity: "epic", happiness: 20, blurb: "The legendary top-tier treat" },
+  { id: "food-kibble", name: "Kibble", emoji: "🍪", kind: "food", rarity: "common", happiness: 5, blurb: "Crunchy everyday staple" },
+  { id: "food-chicken", name: "Chicken Strips", emoji: "🍗", kind: "food", rarity: "common", happiness: 6, blurb: "Lean and protein-packed" },
+  { id: "food-tuna", name: "Tuna Can", emoji: "🐟", kind: "food", rarity: "rare", happiness: 8, blurb: "An irresistible aroma" },
+  { id: "food-salmon", name: "Salmon Fillet", emoji: "🍣", kind: "food", rarity: "rare", happiness: 9, blurb: "Glistening ocean delicacy" },
+  { id: "food-strip", name: "Cat Puree", emoji: "🧃", kind: "food", rarity: "common", happiness: 5, blurb: "Squeeze and watch it vanish" },
+  { id: "food-pudding", name: "Cat Pudding", emoji: "🍮", kind: "food", rarity: "rare", happiness: 8, blurb: "Wobbly, silky dessert" },
+  { id: "food-dried-fish", name: "Freeze-Dried Fish", emoji: "🐠", kind: "food", rarity: "epic", happiness: 12, blurb: "The legendary top-tier treat" },
 
   // ---- Care (4) ----
-  { id: "care-mint", name: "Catnip", emoji: "🌿", kind: "care", rarity: "common", happiness: 10, blurb: "One sniff, instant zoomies" },
-  { id: "care-silvervine", name: "Silvervine", emoji: "🪵", kind: "care", rarity: "rare", happiness: 15, blurb: "Even stronger than catnip" },
-  { id: "care-paste", name: "Hairball Paste", emoji: "🧴", kind: "care", rarity: "common", happiness: 7, blurb: "Goodbye, hairballs" },
-  { id: "care-brush", name: "Massage Brush", emoji: "🪮", kind: "care", rarity: "rare", happiness: 14, blurb: "Grooming and massage in one" },
+  { id: "care-mint", name: "Catnip", emoji: "🌿", kind: "care", rarity: "common", happiness: 6, blurb: "One sniff, instant zoomies" },
+  { id: "care-silvervine", name: "Silvervine", emoji: "🍃", kind: "care", rarity: "rare", happiness: 9, blurb: "Even stronger than catnip" },
+  { id: "care-paste", name: "Hairball Paste", emoji: "🧴", kind: "care", rarity: "common", happiness: 4, blurb: "Goodbye, hairballs" },
+  { id: "care-brush", name: "Massage Brush", emoji: "💆", kind: "care", rarity: "rare", happiness: 8, blurb: "Grooming and massage in one" },
 
   // ---- Toys (7) ----
-  { id: "toy-wand", name: "Feather Wand", emoji: "🪶", kind: "toy", rarity: "common", happiness: 12, blurb: "Fluttering feathers to chase" },
-  { id: "toy-yarn", name: "Yarn Ball", emoji: "🧶", kind: "toy", rarity: "common", happiness: 9, blurb: "Rolls around delightfully" },
-  { id: "toy-bell", name: "Jingle Ball", emoji: "🔔", kind: "toy", rarity: "common", happiness: 10, blurb: "Rings with every bat" },
-  { id: "toy-laser", name: "Laser Pointer", emoji: "🔦", kind: "toy", rarity: "rare", happiness: 15, blurb: "The dot that can't be caught" },
-  { id: "toy-box", name: "Cardboard Box", emoji: "📦", kind: "toy", rarity: "common", happiness: 8, blurb: "A cat's ultimate mansion" },
-  { id: "toy-scratcher", name: "Scratch Pad", emoji: "🛋️", kind: "toy", rarity: "rare", happiness: 12, blurb: "A scratching paradise" },
-  { id: "toy-mouse", name: "Toy Mouse", emoji: "🐭", kind: "toy", rarity: "epic", happiness: 18, blurb: "A wiggly hunt, the best thrill" },
+  { id: "toy-wand", name: "Feather Wand", emoji: "🎣", kind: "toy", rarity: "common", happiness: 7, blurb: "Fluttering feathers to chase" },
+  { id: "toy-yarn", name: "Yarn Ball", emoji: "🧶", kind: "toy", rarity: "common", happiness: 5, blurb: "Rolls around delightfully" },
+  { id: "toy-bell", name: "Jingle Ball", emoji: "🔔", kind: "toy", rarity: "common", happiness: 6, blurb: "Rings with every bat" },
+  { id: "toy-laser", name: "Laser Pointer", emoji: "🔦", kind: "toy", rarity: "rare", happiness: 9, blurb: "The dot that can't be caught" },
+  { id: "toy-box", name: "Cardboard Box", emoji: "📦", kind: "toy", rarity: "common", happiness: 5, blurb: "A cat's ultimate mansion" },
+  { id: "toy-scratcher", name: "Scratch Pad", emoji: "🛋️", kind: "toy", rarity: "rare", happiness: 7, blurb: "A scratching paradise" },
+  { id: "toy-mouse", name: "Toy Mouse", emoji: "🐭", kind: "toy", rarity: "epic", happiness: 11, blurb: "A wiggly hunt, the best thrill" },
 ];
 
 const BY_ID = new Map(CAT_ITEMS.map((i) => [i.id, i]));

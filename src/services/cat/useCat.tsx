@@ -153,7 +153,7 @@ export function CatProvider({ children }: { children: ReactNode }) {
       lastCheckinDate: today,
       checkinStreak: streak,
       inventory: addToInventory(state.inventory, items),
-      happiness: Math.min(100, state.happiness + 5),
+      happiness: Math.min(100, state.happiness + 3),
     });
     return { ok: true, items, streak };
   }, [persist, state]);
@@ -180,7 +180,7 @@ export function CatProvider({ children }: { children: ReactNode }) {
     persist({
       ...state,
       inventory: addToInventory(state.inventory, found),
-      happiness: Math.min(100, state.happiness + 6),
+      happiness: Math.min(100, state.happiness + 4),
     });
     return found;
   }, [persist, state]);
@@ -208,7 +208,7 @@ export function CatProvider({ children }: { children: ReactNode }) {
         ...state,
         claimedMilestones: [...state.claimedMilestones, milestoneId],
         inventory: addToInventory(state.inventory, items),
-        happiness: Math.min(100, state.happiness + 10),
+        happiness: Math.min(100, state.happiness + 6),
       });
       return items;
     },

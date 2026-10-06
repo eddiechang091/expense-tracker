@@ -11,9 +11,9 @@ function itemPurpose(item: CatItem): string {
     case "food":
       return "Feed it to your cat for a happiness boost 🍖";
     case "toy":
-      return "Play with your cat using this toy 🪶";
+      return "Play with your cat using this toy 🐾";
     case "care":
-      return "Use it when grooming your cat 🪮";
+      return "Use it when grooming your cat 💆";
   }
 }
 

@@ -227,8 +227,8 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
               {picker === "food"
                 ? "🍖 Food keeps your cat happy and fed."
                 : picker === "toy"
-                  ? "🪶 Toys are for playtime together!"
-                  : "🪮 Care items make grooming extra relaxing."}
+                  ? "🐾 Toys are for playtime together!"
+                  : "💆 Care items make grooming extra relaxing."}
             </p>
             {pickerItems.length === 0 ? (
               <p className="muted" style={{ fontSize: 13 }}>
@@ -284,10 +284,10 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
             🍖<span>{ACTION_LABELS.feed}</span>
           </button>
           <button className="cat-action" onClick={() => setPicker("toy")} disabled={state.asleep}>
-            🪶<span>{ACTION_LABELS.play}</span>
+            🐾<span>{ACTION_LABELS.play}</span>
           </button>
           <button className="cat-action" onClick={() => setPicker("care")} disabled={state.asleep}>
-            🪮<span>{ACTION_LABELS.groom}</span>
+            💆<span>{ACTION_LABELS.groom}</span>
           </button>
           <button className="cat-action" onClick={doCleanLitter} disabled={state.asleep}>
             💩<span>{ACTION_LABELS.poop}</span>
