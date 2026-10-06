@@ -5,6 +5,18 @@ Newest entries first. Times in America/Halifax.
 
 ---
 
+## 2026-10-06 16:30 — feat/warm-theme → PR #28 (open, awaiting review)
+
+**Per-theme reaction poses (24 new scenes).**
+
+- Each of the 4 theme cats now has 6 reaction scenes (eat/play/groom/
+  sleep/talk/poop) matching its character and environment — the modal
+  swaps artwork on every interaction, just like the cozy cat's 7 poses.
+- `THEME_CAT_ART` carries `poses: Record<CatPose, string>` (idle = base
+  scene); one pose per TS file for reliable transfer.
+- Fixed washed-out text in dark themes: `.cat-modal` and `.milestone-row`
+  pin dark default text on their fixed cream/white surfaces.
+
 ## 2026-10-06 15:45 — feat/warm-theme → PR #28 (open, awaiting review)
 
 **App theme system (5 themes) + per-theme cat companions.**
