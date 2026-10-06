@@ -46,15 +46,20 @@ describe("themes", () => {
     }
   });
 
-  it("non-cozy themes have embedded portrait + scene cat art", () => {
+  it("non-cozy themes have embedded portrait + pose-scene cat art", () => {
     // Cozy reuses the original 7-pose artwork; every other theme ships
-    // its own portrait (launcher) and scene (modal).
+    // its own portrait (launcher) and a full scene per pose (modal).
     expect(THEME_CAT_ART.cozy).toBeUndefined();
+    const poses = ["idle", "eat", "play", "groom", "sleep", "talk", "poop"];
     for (const id of ["cyberpunk", "verdant", "starry", "ocean"] as const) {
       const art = THEME_CAT_ART[id];
       expect(art).toBeDefined();
-      expect(art!.portrait.startsWith("data:image/webp;base64,")).toBe(true);
-      expect(art!.scene.startsWith("data:image/webp;base64,")).toBe(true);
+      if (!art) continue;
+      expect(art.portrait.startsWith("data:image/webp;base64,")).toBe(true);
+      for (const pose of poses) {
+        const img = art.poses[pose as keyof typeof art.poses];
+        expect(img.startsWith("data:image/webp;base64,")).toBe(true);
+      }
     }
   });
 });
