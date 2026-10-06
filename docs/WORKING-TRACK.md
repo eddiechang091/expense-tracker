@@ -5,7 +5,22 @@ Newest entries first. Times in America/Halifax.
 
 ---
 
-## 2026-10-05 23:30 — feat/profile-page → PR (open, awaiting review)
+## 2026-10-06 00:15 — feat/badge-share → PR #20 (open, awaiting review)
+
+**Badge celebration + shareable snapshots** (user request).
+
+- BadgeCelebration modal: full-screen progressive pop/bounce on unlock,
+  queues multiple badges; replaces the toast.
+- Share snapshot: 1080×1350 canvas image (medallion, name, streak pill,
+  branding); `navigator.share` with file → IG/Discord/…; PNG download
+  fallback.
+- Daily spending chart moved dashboard → Expenses page.
+
+**Verification:** `tsc` clean, `vitest` 219/219, `vite build` clean.
+
+---
+
+## 2026-10-05 23:30 — feat/profile-page → PR #19 (open, awaiting review)
 
 **Dashboard slim-down + GitHub-style profile page** (user review feedback).
 
