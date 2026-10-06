@@ -105,6 +105,7 @@ export function ProfilePage() {
   const years = useMemo(() => availableYears(expenses), [expenses]);
   const [year, setYear] = useState<number | null>(null);
   const [shareBadge, setShareBadge] = useState<BadgeDef | null>(null);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const activeYear = year ?? years[0] ?? new Date().getFullYear();
 
   const streak = useMemo(() => computeStreak(expenses), [expenses]);
@@ -116,9 +117,16 @@ export function ProfilePage() {
 
       <Card>
         <div className="profile-head">
-          <div className="profile-avatar" aria-hidden="true">
+          <button
+            type="button"
+            className="profile-avatar profile-avatar--clickable"
+            onClick={() => setShowAvatarPicker((v) => !v)}
+            aria-label="Change avatar"
+            title="Change avatar"
+          >
             <Avatar avatarId={profile.avatarId} avatarEmoji={profile.avatarEmoji} size={68} />
-          </div>
+            <span className="profile-avatar-edit" aria-hidden="true">✏️</span>
+          </button>
           <div className="profile-identity">
             {editing ? (
               <div className="profile-edit">
@@ -219,6 +227,29 @@ export function ProfilePage() {
         )}
         <HeatmapYear year={activeYear} expenses={expenses} />
       </Card>
+
+      {showAvatarPicker && (
+        <Card>
+          <h3 style={{ fontSize: 14, margin: "0 0 10px" }}>Choose your avatar</h3>
+          <div className="profile-avatar-pick" role="group" aria-label="Choose avatar">
+            {AVATARS.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                className={`avatar-choice${profile.avatarId === a.id ? " is-selected" : ""}`}
+                onClick={() => {
+                  update({ avatarId: a.id });
+                  setShowAvatarPicker(false);
+                }}
+                aria-label={a.label}
+                title={a.label}
+              >
+                <img src={a.src} alt="" aria-hidden="true" width={44} height={44} style={{ borderRadius: "50%", objectFit: "cover" }} />
+              </button>
+            ))}
+          </div>
+        </Card>
+      )}
 
       <Card>
         <BadgesRow unlockedIds={unlockedIds} onSelect={setShareBadge} />
