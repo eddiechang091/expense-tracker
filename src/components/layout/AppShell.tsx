@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Plus } from "lucide-react";
+import { useProfile } from "@/services/profile/useProfile";
 import { SideNav } from "./SideNav";
 import { BottomNav } from "./BottomNav";
 
@@ -12,6 +13,7 @@ export function AppShell({
   onNavigate: (path: string) => void;
   children: ReactNode;
 }) {
+  const { profile } = useProfile();
   return (
     <div className="app-shell">
       <button
@@ -36,6 +38,14 @@ export function AppShell({
       >
         <Plus size={18} aria-hidden="true" />
         <span>Add expense</span>
+      </button>
+      <button
+        type="button"
+        className="profile-fab"
+        aria-label="Open profile"
+        onClick={() => onNavigate("/profile")}
+      >
+        <span aria-hidden="true">{profile.avatarEmoji}</span>
       </button>
       <BottomNav route={route} onNavigate={onNavigate} />
     </div>
