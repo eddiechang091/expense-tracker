@@ -87,6 +87,10 @@ export function computeStreak(expenses: Expense[], now: Date = new Date()): Stre
   };
 }
 
+// ---------------------------------------------------------------------------
+// Heatmap — GitHub-style activity grid (columns = weeks, rows = Sun..Sat).
+// ---------------------------------------------------------------------------
+
 export interface HeatmapDay {
   /** YYYY-MM-DD */
   date: string;
@@ -104,90 +108,6 @@ function levelFor(count: number): 0 | 1 | 2 | 3 | 4 {
   if (count === 2) return 2;
   if (count <= 4) return 3;
   return 4;
-}
-
-// ---------------------------------------------------------------------------
-// Year heatmap — full calendar year (Jan..Dec), GitHub profile style.
-// ---------------------------------------------------------------------------
-
-export interface YearStats {
-  year: number;
-  daysLogged: number;
-  expenseCount: number;
-  longestStreak: number;
-}
-
-/** Years that have at least one expense, newest first. */
-export function availableYears(expenses: Expense[], now: Date = new Date()): number[] {
-  const years = new Set<number>();
-  for (const e of expenses) {
-    const m = /^(\d{4})-\d{2}-\d{2}$/.exec(e.date ?? "");
-    if (m) years.add(Number(m[1]));
-  }
-  years.add(now.getFullYear());
-  return [...years].sort((a, b) => b - a);
-}
-
-/**
- * Build a full-year heatmap. Columns are weeks (Sun..Sat); leading and
- * trailing days outside the year are placeholders.
- */
-export function buildYearHeatmap(expenses: Expense[], year: number): HeatmapDay[][] {
-  const counts = new Map<string, number>();
-  for (const e of expenses) {
-    if (e.date && e.date.startsWith(`${year}-`)) {
-      counts.set(e.date, (counts.get(e.date) ?? 0) + 1);
-    }
-  }
-
-  // Start on the Sunday on or before Jan 1.
-  const jan1 = new Date(year, 0, 1);
-  const start = new Date(jan1);
-  start.setDate(start.getDate() - start.getDay());
-
-  const end = new Date(year, 11, 31);
-  const weeks: HeatmapDay[][] = [];
-  const cursor = new Date(start);
-  while (cursor <= end || cursor.getDay() !== 0) {
-    const week: HeatmapDay[] = [];
-    for (let d = 0; d < 7; d++) {
-      const inYear = cursor.getFullYear() === year;
-      const key = toIsoDate(cursor);
-      const count = inYear ? (counts.get(key) ?? 0) : 0;
-      week.push({
-        date: key,
-        count,
-        level: levelFor(count),
-        placeholder: !inYear,
-      });
-      cursor.setDate(cursor.getDate() + 1);
-    }
-    weeks.push(week);
-    if (cursor > end && cursor.getDay() === 0) break;
-  }
-  return weeks;
-}
-
-/** Stats for a single calendar year. */
-export function yearStats(expenses: Expense[], year: number): YearStats {
-  const prefix = `${year}-`;
-  const yearExpenses = expenses.filter((e) => e.date?.startsWith(prefix));
-  const dates = new Set(yearExpenses.map((e) => e.date));
-  let longest = 0;
-  const sorted = [...dates].sort();
-  let run = 0;
-  let prev: string | null = null;
-  for (const key of sorted) {
-    run = prev !== null && shiftDate(prev, 1) === key ? run + 1 : 1;
-    if (run > longest) longest = run;
-    prev = key;
-  }
-  return {
-    year,
-    daysLogged: dates.size,
-    expenseCount: yearExpenses.length,
-    longestStreak: longest,
-  };
 }
 
 /**

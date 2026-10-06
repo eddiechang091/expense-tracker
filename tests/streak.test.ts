@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeStreak, buildHeatmap, buildYearHeatmap, availableYears, yearStats } from "@/lib/streak";
+import { computeStreak, buildHeatmap } from "@/lib/streak";
 import type { Expense } from "@/lib/types";
 
 function expenseOn(date: string, n = 1): Expense[] {
@@ -92,52 +92,5 @@ describe("buildHeatmap", () => {
     expect(byDate.get("2026-10-04")?.level).toBe(2);
     expect(byDate.get("2026-10-03")?.level).toBe(3);
     expect(byDate.get("2026-10-02")?.level).toBe(4);
-  });
-});
-
-describe("buildYearHeatmap", () => {
-  it("covers the full year starting on a Sunday", () => {
-    const grid = buildYearHeatmap([], 2026);
-    expect(grid.length).toBeGreaterThanOrEqual(52);
-    expect(grid.length).toBeLessThanOrEqual(54);
-    // First cell is the Sunday on/before Jan 1 2026 (Dec 28 2025 is a Sunday)
-    expect(grid[0][0].date).toBe("2025-12-28");
-    expect(grid[0][0].placeholder).toBe(true);
-    // Jan 1 2026 is a Thursday (index 4)
-    const jan1 = grid[0][4];
-    expect(jan1.date).toBe("2026-01-01");
-    expect(jan1.placeholder).toBe(false);
-    // Last week contains Dec 31
-    const all = grid.flat();
-    const dec31 = all.find((d) => d.date === "2026-12-31");
-    expect(dec31?.placeholder).toBe(false);
-  });
-
-  it("counts expenses by day", () => {
-    const grid = buildYearHeatmap(expenseOn("2026-06-15", 3), 2026);
-    const day = grid.flat().find((d) => d.date === "2026-06-15");
-    expect(day?.count).toBe(3);
-    expect(day?.level).toBe(3);
-  });
-});
-
-describe("availableYears", () => {
-  it("returns years with data plus current year, newest first", () => {
-    const years = availableYears(expenseOn("2025-03-01"), new Date(2026, 9, 5));
-    expect(years).toEqual([2026, 2025]);
-  });
-});
-
-describe("yearStats", () => {
-  it("computes yearly stats", () => {
-    const expenses = [
-      ...expenseOn("2026-01-01"),
-      ...expenseOn("2026-01-02"),
-      ...expenseOn("2026-01-03"),
-      ...expenseOn("2026-05-05", 2),
-      ...expenseOn("2025-12-31"),
-    ];
-    const s = yearStats(expenses, 2026);
-    expect(s).toMatchObject({ year: 2026, daysLogged: 4, expenseCount: 5, longestStreak: 3 });
   });
 });
