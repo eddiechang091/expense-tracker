@@ -17,15 +17,19 @@ jobs:
       matrix:
         include:
           - os: macos-latest
+            runner: macos-13-arm64
             platform: darwin-arm64
             format: tar.gz
-          - os: macos-13
+          - os: macos-latest
+            runner: macos-latest
             platform: darwin-x86_64
             format: tar.gz
           - os: ubuntu-latest
+            runner: ubuntu-latest
             platform: linux-x86_64
             format: tar.gz
           - os: windows-latest
+            runner: windows-latest
             platform: windows-x86_64
             format: zip
 
