@@ -245,7 +245,7 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
 
   return (
     <div className="cat-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-label="Lucky cat companion">
-      <div className="cat-modal cat-modal--tama cat-modal--desktop" onClick={(e) => e.stopPropagation()}>
+      <div className="cat-modal cat-modal--tama" onClick={(e) => e.stopPropagation()}>
         <div className="cat-modal-header">
           <span className="cat-modal-title">🐱 Lucky Cat</span>
           <div className="cat-happiness" title={`Joy ${state.happiness}`}>
@@ -267,17 +267,15 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
           <button className="cat-modal-close" onClick={onClose} aria-label="Close">✕</button>
         </div>
 
-        <div className="cat-tama-body">
-          {/* Left: stats + scene + actions */}
-          <div className="cat-tama-left">
-            <div className="cat-stats">
-              <StatBar icon="🍖" label="Satiety" value={state.satiety} color="#f5a623" />
-              <StatBar icon="😊" label="Mood" value={state.happiness} color="#f76b8a" />
-              <StatBar icon="🧼" label="Clean" value={state.cleanliness} color="#4fc3f7" />
-              <StatBar icon="⚡" label="Energy" value={state.energy} color="#66bb6a" />
-            </div>
+        {/* Tamagotchi stat bars */}
+        <div className="cat-stats">
+          <StatBar icon="🍖" label="Satiety" value={state.satiety} color="#f5a623" />
+          <StatBar icon="😊" label="Mood" value={state.happiness} color="#f76b8a" />
+          <StatBar icon="🧼" label="Clean" value={state.cleanliness} color="#4fc3f7" />
+          <StatBar icon="⚡" label="Energy" value={state.energy} color="#66bb6a" />
+        </div>
 
-            <div className="cat-scene" style={sceneBg ? { backgroundImage: `url(${sceneBg})` } : undefined}>
+        <div className="cat-scene" style={sceneBg ? { backgroundImage: `url(${sceneBg})` } : undefined}>
               {bubble && <div className="cat-bubble">{bubble}</div>}
               {!themeArt && (
                 CAT_POSES[pose] ? (
@@ -317,10 +315,8 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
                 {state.asleep ? "☀️" : "🌙"}<span>{state.asleep ? ACTION_LABELS.wake : ACTION_LABELS.sleep}</span>
               </button>
             </div>
-          </div>
 
-          {/* Right: AI chat (full height) */}
-          <div className="cat-tama-right">
+            {/* AI chat */}
             <div className="cat-chat">
               <div className="cat-chat-header">
                 <span className="cat-chat-title">💬 AI Chat</span>
@@ -402,8 +398,6 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
                 </p>
               )}
             </div>
-          </div>
-        </div>
 
         {/* Item picker (overlay) */}
         {picker && (
