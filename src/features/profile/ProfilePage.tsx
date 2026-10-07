@@ -294,8 +294,6 @@ export function ProfilePage() {
       {shareBadge ? (
         <BadgeCelebration
           badges={[shareBadge]}
-          displayName={profile.displayName}
-          streakDays={streak.current}
           onDone={() => setShareBadge(null)}
         />
       ) : null}
