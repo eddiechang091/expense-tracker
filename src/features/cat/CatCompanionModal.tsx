@@ -33,12 +33,12 @@ interface CatCompanionModalProps {
 type PickerKind = ItemKind | null;
 
 const ACTION_LABELS: Record<string, string> = {
-  feed: "喂食",
-  poop: "铲屎",
-  play: "玩耍",
-  groom: "梳毛",
-  sleep: "睡觉",
-  wake: "唤醒",
+  feed: "Feed",
+  poop: "Scoop",
+  play: "Play",
+  groom: "Groom",
+  sleep: "Sleep",
+  wake: "Wake",
 };
 
 /** Trim text to at most N sentences for the speech bubble. */
@@ -88,7 +88,7 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
 
   const [pose, setPose] = useState<CatPose>("idle");
   const sceneBg = themeArt ? themeArt.poses[pose] : CAT_BACKGROUND;
-  const [bubble, setBubble] = useState("今天也要好好记账哦！");
+  const [bubble, setBubble] = useState("Let's make today a great logging day!");
   const [picker, setPicker] = useState<PickerKind>(null);
   const [dropNotice, setDropNotice] = useState<CatItem | null>(null);
   const [checkinItems, setCheckinItems] = useState<CatItem[] | null>(null);
@@ -105,7 +105,7 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
       setPicker(null);
       setDropNotice(null);
       setCheckinItems(null);
-      setBubble(state.asleep ? "呼噜噜…（招财猫睡着了）" : "今天也要好好记账哦！");
+      setBubble(state.asleep ? "Zzz… (the lucky cat is asleep)" : "Let's make today a great logging day!");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -148,7 +148,7 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
     const drop = maybeHappyDrop(expenseStats);
     if (drop) {
       setDropNotice(drop);
-      setBubble(`哇！招财猫掉落了 ${drop.emoji} ${drop.name}！`);
+      setBubble(`Wow! The lucky cat dropped ${drop.emoji} ${drop.name}!`);
       playPop();
       window.setTimeout(() => setDropNotice(null), 4000);
     }
@@ -168,7 +168,7 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
     const res = checkIn();
     if (res.ok) {
       setCheckinItems(res.items);
-      setBubble(`签到第 ${res.streak} 天！招财猫获得了 ${res.items.length} 件礼物！`);
+      setBubble(`Check-in day ${res.streak}! The lucky cat got ${res.items.length} gift${res.items.length > 1 ? "s" : ""}!`);
       playPop();
       setPose("play");
       revertPose();
@@ -180,11 +180,11 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
     const fn = kind === "food" ? feed : kind === "toy" ? play : groom;
     const item = fn(itemId);
     if (!item) {
-      setBubble("咦，没有可用的…");
+      setBubble("Hmm, nothing to use…");
       return;
     }
     setPicker(null);
-    const label = kind === "food" ? "好吃！" : kind === "toy" ? "好玩！" : "好舒服！";
+    const label = kind === "food" ? "Yum!" : kind === "toy" ? "Whee!" : "Ahh, so fresh!";
     setBubble(`${label} ${item.emoji} ${item.name}`);
     setPose(kind === "food" ? "eat" : kind === "toy" ? "play" : "groom");
     playHappy();
@@ -194,7 +194,7 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
 
   const doCleanLitter = () => {
     const found = cleanLitter();
-    setBubble(found.length > 0 ? `猫砂铲干净啦！还捡到了 ${found[0].emoji} ${found[0].name}！` : "猫砂铲干净啦，清清爽爽！");
+    setBubble(found.length > 0 ? `Litter box cleaned! Found ${found[0].emoji} ${found[0].name}!` : "Litter box cleaned. So fresh!");
     setPose("play");
     playHappy();
     revertPose();
@@ -206,11 +206,11 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
     toggleSleep();
     if (goingToSleep) {
       setPose("sleep");
-      setBubble("呼噜噜…（招财猫睡着了）");
+      setBubble("Zzz… (the lucky cat is asleep)");
       playSnore();
     } else {
       setPose("idle");
-      setBubble("哈——欠…我醒啦！一起玩吧？");
+      setBubble("Yaaawn… I'm awake! Want to play?");
       playYawn();
       revertPose();
     }
@@ -250,9 +250,9 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
     <div className="cat-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-label="Lucky cat companion">
       <div className="cat-modal cat-modal--tama" onClick={(e) => e.stopPropagation()}>
         <div className="cat-modal-header">
-          <span className="cat-modal-title">🐱 招财猫</span>
+          <span className="cat-modal-title">🐱 Lucky Cat</span>
           <div className="cat-happiness" title={`Joy ${state.happiness}`}>
-            <span className="cat-happiness-label">开心</span>
+            <span className="cat-happiness-label">Joy</span>
             <div className="cat-happiness-bar">
               <div className="cat-happiness-fill" style={{ width: `${state.happiness}%` }} />
             </div>
@@ -260,11 +260,11 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
           </div>
           {canCheckIn ? (
             <button className="cat-checkin-btn" onClick={doCheckIn}>
-              🎁 签到
+              🎁 Check-in
             </button>
           ) : (
             <span className="cat-checkin-done" title={`Streak ${state.checkinStreak}`}>
-              ✅ 已签到 {state.checkinStreak}
+              ✅ Day {state.checkinStreak}
             </span>
           )}
           <button className="cat-modal-close" onClick={onClose} aria-label="Close">✕</button>
@@ -272,10 +272,10 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
 
         {/* Tamagotchi stat bars */}
         <div className="cat-stats">
-          <StatBar icon="🍖" label="饱食" value={state.satiety} color="#f5a623" />
-          <StatBar icon="😊" label="心情" value={state.happiness} color="#f76b8a" />
-          <StatBar icon="🧼" label="清洁" value={state.cleanliness} color="#4fc3f7" />
-          <StatBar icon="⚡" label="精力" value={state.energy} color="#66bb6a" />
+          <StatBar icon="🍖" label="Satiety" value={state.satiety} color="#f5a623" />
+          <StatBar icon="😊" label="Mood" value={state.happiness} color="#f76b8a" />
+          <StatBar icon="🧼" label="Clean" value={state.cleanliness} color="#4fc3f7" />
+          <StatBar icon="⚡" label="Energy" value={state.energy} color="#66bb6a" />
         </div>
 
         {/* Scene: cozy room + cat pose + speech bubble */}
@@ -299,21 +299,21 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
         )}
         {checkinItems && checkinItems.length > 0 && (
           <div className="cat-notice" role="status">
-            🎁 签到 gifts: {checkinItems.map((i) => `${i.emoji} ${i.name}`).join(", ")}
+            🎁 Check-in gifts: {checkinItems.map((i) => `${i.emoji} ${i.name}`).join(", ")}
           </div>
         )}
 
         {/* AI chat */}
         <div className="cat-chat">
           <div className="cat-chat-header">
-            <span className="cat-chat-title">💬 AI 互动对话记录 ({messages.length}条)</span>
+            <span className="cat-chat-title">💬 AI Chat History ({messages.length})</span>
             <div className="cat-chat-actions">
               <button
                 type="button"
                 className="cat-link-btn"
                 onClick={() => setShowHistory((v) => !v)}
               >
-                {showHistory ? "收起" : "查看全部对话"}
+                {showHistory ? "Collapse" : "View all"}
               </button>
               {messages.length > 0 && (
                 <button
@@ -321,7 +321,7 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
                   className="cat-link-btn cat-link-btn--danger"
                   onClick={() => void clearMessages()}
                 >
-                  清空
+                  Clear
                 </button>
               )}
             </div>
@@ -330,11 +330,11 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
           {showHistory && (
             <div className="cat-chat-history" ref={chatScrollRef}>
               {messages.length === 0 && (
-                <p className="muted" style={{ fontSize: 12 }}>还没有对话 — 问我关于你的支出吧！</p>
+                <p className="muted" style={{ fontSize: 12 }}>No conversations yet — ask me about your spending!</p>
               )}
               {messages.map((m: ConversationMessage) => (
                 <div key={m.id} className={`cat-msg cat-msg--${m.role}`}>
-                  <span className="cat-msg-role">{m.role === "user" ? "你" : "🐱"}</span>
+                  <span className="cat-msg-role">{m.role === "user" ? "You" : "🐱"}</span>
                   <span className="cat-msg-text">{m.text}</span>
                 </div>
               ))}
@@ -369,7 +369,7 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
             <input
               type="text"
               className="cat-chat-input"
-              placeholder="对猫猫说点什么… (问候/撒娇/聊天)"
+              placeholder="Say something to the cat… (greet/cuddle/chat)"
               value={chatInput}
               disabled={!chatReady || sending || state.asleep}
               onChange={(e) => setChatInput(e.target.value)}
@@ -389,7 +389,7 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
           </div>
           {chatStatus !== "ready" && (
             <p className="muted" style={{ fontSize: 11 }}>
-              {chatStatus === "loading" ? "AI 正在准备中…" : "AI 暂不可用"}
+              {chatStatus === "loading" ? "AI is getting ready…" : "AI unavailable"}
             </p>
           )}
         </div>
@@ -398,7 +398,7 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
         {picker && (
           <div className="cat-picker" role="dialog" aria-label={`Choose ${picker}`}>
             <div className="cat-picker-header">
-              <span>{picker === "food" ? "🍖 选择食物" : picker === "toy" ? "🧸 选择玩具" : "🧼 选择护理用品"}</span>
+              <span>{picker === "food" ? "🍖 Choose food" : picker === "toy" ? "🧸 Choose toy" : "🧼 Choose care item"}</span>
               <button className="cat-modal-close" onClick={() => setPicker(null)} aria-label="Close picker">✕</button>
             </div>
             {pickerItems.length === 0 ? (
