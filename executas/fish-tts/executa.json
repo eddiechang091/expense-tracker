@@ -21,22 +21,22 @@
         "supports_protocol": true,
         "binary_artifacts": {
           "darwin-arm64": {
-            "path": "dist/tool-dev-fish-tts-1.0.1-darwin-arm64.tar.gz",
+            "path": "dist/tool-dev-fish-tts-1.0.2-darwin-arm64.tar.gz",
             "entrypoint": "tool-dev-fish-tts",
             "format": "tar.gz"
           },
           "darwin-x86_64": {
-            "path": "dist/tool-dev-fish-tts-1.0.1-darwin-x86_64.tar.gz",
+            "path": "dist/tool-dev-fish-tts-1.0.2-darwin-x86_64.tar.gz",
             "entrypoint": "tool-dev-fish-tts",
             "format": "tar.gz"
           },
           "linux-x86_64": {
-            "path": "dist/tool-dev-fish-tts-1.0.1-linux-x86_64.tar.gz",
+            "path": "dist/tool-dev-fish-tts-1.0.2-linux-x86_64.tar.gz",
             "entrypoint": "tool-dev-fish-tts",
             "format": "tar.gz"
           },
           "windows-x86_64": {
-            "path": "dist/tool-dev-fish-tts-1.0.1-windows-x86_64.zip",
+            "path": "dist/tool-dev-fish-tts-1.0.2-windows-x86_64.zip",
             "entrypoint": "tool-dev-fish-tts.exe",
             "format": "zip"
           }
