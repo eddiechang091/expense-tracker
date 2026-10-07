@@ -25,7 +25,6 @@ import { useInsight } from "@/features/ai/useInsight";
 import { DailyDelightCard } from "@/features/delight/DailyDelightCard";
 import { useGamification } from "@/features/gamification/useGamification";
 import { BadgeCelebration } from "@/features/gamification/BadgeCelebration";
-import { useProfile } from "@/services/profile/useProfile";
 
 function periodText(delta: number, direction: string, currency: string): string {
   const amount = money(Math.abs(delta), currency);
@@ -73,7 +72,6 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
   // Badge unlocks are checked here so they fire wherever the user is;
   // the badges themselves live on the profile page.
   const { streak, newlyUnlocked } = useGamification(expenses, budgets.length);
-  const { profile } = useProfile();
   const [celebration, setCelebration] = useState(newlyUnlocked);
   const [catOpen, setCatOpen] = useState(false);
 
@@ -184,8 +182,6 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
       {celebration.length > 0 ? (
         <BadgeCelebration
           badges={celebration}
-          displayName={profile.displayName}
-          streakDays={streak.current}
           onDone={() => setCelebration([])}
         />
       ) : null}
