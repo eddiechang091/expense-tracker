@@ -27,7 +27,7 @@ from pathlib import Path
 
 
 TOOL_NAME = "fish-tts"
-TOOL_VERSION = "1.0.1"
+TOOL_VERSION = "1.0.2"
 FISH_API_BASE = "https://api.fish.audio/v1"
 DEFAULT_MODEL = "s2.1-pro-free"
 DEFAULT_FORMAT = "mp3"

@@ -3,7 +3,7 @@
   "permissions": ["llm.complete", "storage.read", "storage.write", "tools.invoke"],
   "host_capabilities": ["llm.complete", "aps.kv"],
   "required_executas": [
-    { "tool_id": "bundled:fish-tts", "version": "1.0.1" }
+    { "tool_id": "bundled:fish-tts", "version": "1.0.2" }
   ],
   "optional_executas": [],
   "ui": {
