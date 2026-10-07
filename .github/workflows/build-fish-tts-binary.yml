@@ -1,21 +1,10 @@
 name: Build Fish TTS Executa Binaries
 
-# Manual release builds for the bundled fish-tts Executa.
-# Run via: Actions tab → this workflow → "Run workflow" → version (default 1.0.0)
-#
-# Produces 4 standalone binaries (PyInstaller --onefile), uploads them to a
-# GitHub Release, then download the archives into executas/fish-tts/dist/
-# (paths must match binary_artifacts in executas/fish-tts/executa.json)
-# before running `anna-app apps publish`.
-#
-# Re-run whenever executas/fish-tts code, dependencies, or the executa
-# version changes. linux-x86_64 must not be omitted (Anna Cloud Agent).
-
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Executa version to build (must match executa.json)'
+        description: 'Version to build (e.g., 1.0.0)'
         required: true
         default: '1.0.0'
 
@@ -27,76 +16,89 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: darwin-arm64
-            runs_on: macos-14
+          - os: macos-latest
+            platform: darwin-arm64
             format: tar.gz
-          - platform: darwin-x86_64
-            # NOTE: if macos-13 is retired, use macos-15-intel or drop this leg
-            runs_on: macos-13
+          - os: macos-13
+            platform: darwin-x86_64
             format: tar.gz
-          - platform: linux-x86_64
-            runs_on: ubuntu-latest
+          - os: ubuntu-latest
+            platform: linux-x86_64
             format: tar.gz
-          - platform: windows-x86_64
-            runs_on: windows-latest
+          - os: windows-latest
+            platform: windows-x86_64
             format: zip
 
-    runs-on: ${{ matrix.runs_on }}
-    defaults:
-      run:
-        shell: bash
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      - name: Build binary + protocol smoke test
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyInstaller
+
+      - name: Build binary
         run: |
           cd executas/fish-tts
-          chmod +x build_binary.sh
-          ./build_binary.sh --test
+          pyinstaller \
+            --onefile \
+            --name tool-dev-fish-tts \
+            --dist ../dist-${{ matrix.platform }} \
+            fish_tts/main.py
+        shell: bash
 
-      - name: Package release archive (Unix)
+      - name: Create artifact archive (Unix)
         if: matrix.format == 'tar.gz'
         run: |
-          cd executas/fish-tts
-          mkdir -p pkg/bin dist
-          cp build/dist/tool-dev-fish-tts pkg/bin/
-          (cd pkg && tar -czf "../dist/tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.tar.gz" bin)
-          cd dist
-          sha256sum "tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.tar.gz" > "tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.tar.gz.sha256"
-          tar -tzf "tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.tar.gz"
+          cd executas/dist-${{ matrix.platform }}
+          tar -czf ../tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.tar.gz tool-dev-fish-tts
+          ls -lh ../tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.tar.gz
+        shell: bash
 
-      - name: Package release archive (Windows)
+      - name: Create artifact archive (Windows)
         if: matrix.format == 'zip'
-        shell: pwsh
         run: |
-          cd executas/fish-tts
-          New-Item -ItemType Directory -Force -Path pkg/bin, dist | Out-Null
-          Copy-Item build/dist/tool-dev-fish-tts.exe pkg/bin/
-          Compress-Archive -Path pkg/bin -DestinationPath "dist/tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.zip" -Force
-          cd dist
-          (Get-FileHash "tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.zip" -Algorithm SHA256).Hash.ToLower() + "  tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.zip" | Out-File -Encoding ascii "tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.zip.sha256"
+          cd executas\dist-${{ matrix.platform }}
+          7z a ..\tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.zip tool-dev-fish-tts.exe
+          dir ..\tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.zip
+        shell: pwsh
+
+      - name: Generate SHA256 checksum
+        run: |
+          cd executas
+          $file = "tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.${{ matrix.format }}"
+          if ("${{ matrix.format }}" -eq "tar.gz") {
+            sha256sum "$file" > "$file.sha256"
+          } else {
+            certutil -hashfile "$file" SHA256 | findstr /V "SHA256" | findstr /V "^$" > "$file.sha256"
+          }
+        shell: pwsh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: fish-tts-${{ matrix.platform }}
           path: |
-            executas/fish-tts/dist/tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.${{ matrix.format }}
-            executas/fish-tts/dist/tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.${{ matrix.format }}.sha256
-          retention-days: 90
+            executas/tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.${{ matrix.format }}
+            executas/tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.${{ matrix.format }}.sha256
+          retention-days: 30
 
   release:
     needs: build
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -105,8 +107,7 @@ jobs:
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
-          tag: fish-tts-v${{ inputs.version }}
-          name: fish-tts v${{ inputs.version }}
+          tag: v${{ inputs.version }}
           artifacts: |
             artifacts/fish-tts-darwin-arm64/*
             artifacts/fish-tts-darwin-x86_64/*
