@@ -143,54 +143,56 @@
 
 /* Item picker */
 .cat-picker {
-  background: #fff;
-  border: 1px solid #f0e6d8;
-  border-radius: 12px;
-  padding: 10px;
-  margin-bottom: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin: 10px 0;
+  box-shadow: var(--shadow-sm);
 }
 
-.cat-picker-title {
+.cat-picker-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--text);
 }
 
-.cat-picker-close {
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-size: 13px;
-  color: #999;
-}
-
-.cat-picker-items {
+.cat-picker-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 
-.cat-item-btn {
+.cat-picker-item {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 2px;
-  border: 1px solid #f0e6d8;
-  background: #fffaf3;
-  border-radius: 10px;
-  padding: 8px 10px;
+  gap: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
   cursor: pointer;
-  min-width: 72px;
+  font-family: inherit;
+  transition: transform var(--dur-fast), border-color var(--dur-fast), box-shadow var(--dur-fast);
 }
 
-.cat-item-btn:hover { border-color: #ffb347; }
+.cat-picker-item:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
 
-.cat-item-emoji { font-size: 24px; }
-.cat-item-name { font-size: 11px; }
-.cat-item-count { font-size: 11px; color: #b3541e; font-weight: 700; }
+.cat-picker-item:active {
+  transform: translateY(0);
+}
+
+.cat-picker-emoji { font-size: 26px; }
+.cat-picker-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.cat-picker-count { font-size: 12px; color: var(--primary-strong); font-weight: 700; }
 
 /* Inventory */
 .cat-inventory {
@@ -366,3 +368,249 @@
   pointer-events: none;
 }
 
+
+/* --- Tamagotchi refactor: stat bars --- */
+.cat-modal--tama {
+  max-width: 520px;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+.cat-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+  padding: 10px 14px 4px;
+}
+
+.cat-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.cat-stat-label {
+  white-space: nowrap;
+  color: var(--text-muted);
+  min-width: 44px;
+}
+
+.cat-stat-track {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--surface-sunken, #f0ede8);
+  overflow: hidden;
+}
+
+.cat-stat-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.cat-stat-num {
+  min-width: 22px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+/* --- Tamagotchi refactor: chat --- */
+.cat-chat {
+  padding: 8px 14px 4px;
+  border-top: 1px solid var(--border, #eee);
+  margin-top: 8px;
+}
+
+.cat-chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.cat-chat-title {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cat-chat-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.cat-link-btn {
+  background: none;
+  border: none;
+  color: var(--accent, #b0722e);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.cat-link-btn--danger {
+  color: #c0392b;
+}
+
+.cat-chat-history {
+  max-height: 160px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: var(--surface-sunken, #faf8f4);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.cat-msg {
+  display: flex;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.45;
+  max-width: 92%;
+}
+
+.cat-msg--user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.cat-msg--assistant {
+  align-self: flex-start;
+}
+
+.cat-msg-role {
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+.cat-msg-text {
+  background: #fff;
+  border-radius: 10px;
+  padding: 6px 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.cat-msg--user .cat-msg-text {
+  background: #ffe9c7;
+}
+
+.cat-typing {
+  color: var(--text-muted);
+  animation: cat-blink 1s infinite;
+}
+
+@keyframes cat-blink {
+  50% { opacity: 0.3; }
+}
+
+.cat-chat-error {
+  font-size: 11px;
+  color: #c0392b;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cat-suggestions {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+}
+
+.cat-suggestion-chip {
+  flex-shrink: 0;
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--border-strong, #e0d8cc);
+  background: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cat-suggestion-chip:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.cat-chat-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.cat-chat-input {
+  flex: 1;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 18px;
+  border: 1px solid var(--border-strong, #e0d8cc);
+  background: var(--surface, #fff);
+  color: var(--text);
+  font-family: inherit;
+}
+
+.cat-chat-input:disabled {
+  opacity: 0.6;
+}
+
+.cat-chat-send {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: #f5b942;
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.cat-chat-send:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* --- Tamagotchi: slightly larger fonts for readability --- */
+.cat-modal--tama .cat-stat {
+  font-size: 13px;
+}
+
+.cat-modal--tama .cat-stat-track {
+  height: 10px;
+}
+
+.cat-modal--tama .cat-bubble {
+  font-size: 15px;
+}
+
+.cat-modal--tama .cat-chat-history {
+  max-height: 220px;
+  min-height: 160px;
+}
+
+.cat-modal--tama .cat-msg {
+  font-size: 14px;
+}
+
+.cat-modal--tama .cat-chat-input {
+  font-size: 14px;
+}
+
+.cat-modal--tama .cat-suggestion-chip {
+  font-size: 13px;
+}
+
+.cat-modal--tama .cat-action {
+  font-size: 13px;
+}

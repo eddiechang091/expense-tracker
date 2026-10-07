@@ -43,10 +43,20 @@ async function loadCatState(): Promise<CatState> {
     const now = Date.now();
     const hoursAway = Math.max(0, (now - (saved.updatedAt || now)) / 3_600_000);
     const decay = Math.floor(hoursAway * HAPPINESS_DECAY_PER_HOUR);
+    // New stats decay too; sleeping restores energy instead of draining it.
+    const satietyDecay = Math.floor(hoursAway * 2);
+    const cleanlinessDecay = Math.floor(hoursAway * 1);
+    const energyDelta = saved.asleep
+      ? Math.floor(hoursAway * 10) // sleeping restores
+      : -Math.floor(hoursAway * 1);
+    const clamp = (v: number) => Math.max(0, Math.min(100, v));
     return {
       ...DEFAULT_CAT_STATE,
       ...saved,
-      happiness: Math.max(0, Math.min(100, saved.happiness - decay)),
+      happiness: clamp(saved.happiness - decay),
+      satiety: clamp((saved.satiety ?? 60) - satietyDecay),
+      cleanliness: clamp((saved.cleanliness ?? 60) - cleanlinessDecay),
+      energy: clamp((saved.energy ?? 80) + energyDelta),
       inventory: saved.inventory ?? {},
       claimedMilestones: saved.claimedMilestones ?? [],
       updatedAt: now,
@@ -154,24 +164,47 @@ export function CatProvider({ children }: { children: ReactNode }) {
       checkinStreak: streak,
       inventory: addToInventory(state.inventory, items),
       happiness: Math.min(100, state.happiness + 3),
+      satiety: Math.min(100, state.satiety + 5),
+      cleanliness: Math.min(100, state.cleanliness + 5),
+      energy: Math.min(100, state.energy + 5),
     });
     return { ok: true, items, streak };
   }, [persist, state]);
 
-  const useItem = useCallback(
-    (itemId: string): CatItem | null => {
+  const useItemFor = useCallback(
+    (
+      itemId: string,
+      statDelta: { satiety?: number; cleanliness?: number; energy?: number }
+    ): CatItem | null => {
       const item = getItem(itemId);
       if (!item) return null;
       const nextInv = takeFromInventory(state.inventory, itemId);
       if (!nextInv) return null;
+      const clamp = (v: number) => Math.max(0, Math.min(100, v));
       persist({
         ...state,
         inventory: nextInv,
-        happiness: Math.min(100, state.happiness + item.happiness),
+        happiness: clamp(state.happiness + item.happiness),
+        satiety: clamp(state.satiety + (statDelta.satiety ?? 0)),
+        cleanliness: clamp(state.cleanliness + (statDelta.cleanliness ?? 0)),
+        energy: clamp(state.energy + (statDelta.energy ?? 0)),
       });
       return item;
     },
     [persist, state]
+  );
+
+  const feed = useCallback(
+    (itemId: string) => useItemFor(itemId, { satiety: 14 }),
+    [useItemFor]
+  );
+  const play = useCallback(
+    (itemId: string) => useItemFor(itemId, { energy: -8, satiety: -3 }),
+    [useItemFor]
+  );
+  const groom = useCallback(
+    (itemId: string) => useItemFor(itemId, { cleanliness: 14 }),
+    [useItemFor]
   );
 
   const cleanLitter = useCallback((): CatItem[] => {
@@ -181,12 +214,19 @@ export function CatProvider({ children }: { children: ReactNode }) {
       ...state,
       inventory: addToInventory(state.inventory, found),
       happiness: Math.min(100, state.happiness + 4),
+      cleanliness: Math.min(100, state.cleanliness + 10),
     });
     return found;
   }, [persist, state]);
 
   const toggleSleep = useCallback(() => {
-    persist({ ...state, asleep: !state.asleep });
+    const waking = state.asleep;
+    persist({
+      ...state,
+      asleep: !state.asleep,
+      // A good nap restores energy.
+      energy: waking ? Math.min(100, state.energy + 25) : state.energy,
+    });
   }, [persist, state]);
 
   const grantItems = useCallback(
@@ -238,9 +278,9 @@ export function CatProvider({ children }: { children: ReactNode }) {
       loaded,
       checkIn,
       canCheckIn,
-      feed: useItem,
-      play: useItem,
-      groom: useItem,
+      feed,
+      play,
+      groom,
       cleanLitter,
       toggleSleep,
       grantItems,
@@ -252,7 +292,9 @@ export function CatProvider({ children }: { children: ReactNode }) {
       loaded,
       checkIn,
       canCheckIn,
-      useItem,
+      feed,
+      play,
+      groom,
       cleanLitter,
       toggleSleep,
       grantItems,

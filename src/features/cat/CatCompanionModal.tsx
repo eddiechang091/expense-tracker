@@ -1,8 +1,12 @@
-// Interactive 2D lucky cat companion modal.
+// Interactive 2D lucky cat companion modal — Tamagotchi-style.
 //
-// Floating semi-transparent modal over the Dashboard: a cozy cat-room scene
-// with the cat (pose changes per interaction), action buttons, inventory,
-// happiness meter, and daily check-in.
+// Floating modal over the Dashboard: stat bars (satiety/mood/cleanliness/
+// energy), a cozy cat-room scene with pose changes, AI chat integrated
+// directly (Money Buddy conversation), action buttons with sound effects,
+// inventory, happiness meter, and daily check-in.
+//
+// AI replies appear in the speech bubble (trimmed to 2-3 sentences) and in
+// the full conversation history below.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCat } from "@/services/cat/useCat";
@@ -13,6 +17,11 @@ import { useTheme } from "@/services/theme/useTheme";
 import { CAT_ITEMS, getItem } from "@/services/cat/items";
 import type { CatItem, ItemKind } from "@/services/cat/types";
 import { RewardCelebration } from "./RewardCelebration";
+import { playHappy, playSnore, playYawn, playPop } from "@/services/cat/sounds";
+import { useExpenses } from "@/services/expenses/useExpenses";
+import { useBudgets } from "@/services/budgets/useBudgets";
+import { useConversation } from "@/features/ai/useConversation";
+import type { ConversationMessage } from "@/features/ai/conversationTypes";
 import "./catCompanion.css";
 
 interface CatCompanionModalProps {
@@ -25,17 +34,57 @@ type PickerKind = ItemKind | null;
 
 const ACTION_LABELS: Record<string, string> = {
   feed: "Feed",
+  poop: "Scoop",
   play: "Play",
   groom: "Groom",
-  poop: "Litter",
   sleep: "Sleep",
   wake: "Wake",
 };
+
+/** Trim text to at most N sentences for the speech bubble. */
+function toBubbleText(text: string, maxSentences = 3): string {
+  const parts = text.split(/([.!?。！？]+\s*)/g).filter((s) => s.trim().length > 0);
+  const sentences: string[] = [];
+  for (let i = 0; i < parts.length && sentences.length < maxSentences; i += 2) {
+    const s = (parts[i] + (parts[i + 1] ?? "")).trim();
+    if (s) sentences.push(s);
+  }
+  return sentences.join(" ") || text.slice(0, 120);
+}
+
+function StatBar({ icon, label, value, color }: { icon: string; label: string; value: number; color: string }) {
+  return (
+    <div className="cat-stat" title={`${label} ${Math.round(value)}`}>
+      <span className="cat-stat-label">
+        {icon}
+        {label}
+      </span>
+      <div className="cat-stat-track">
+        <div className="cat-stat-fill" style={{ width: `${Math.max(0, Math.min(100, value))}%`, background: color }} />
+      </div>
+      <span className="cat-stat-num">{Math.round(value)}</span>
+    </div>
+  );
+}
 
 export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionModalProps) {
   const { state, loaded, checkIn, canCheckIn, feed, play, groom, cleanLitter, toggleSleep, maybeHappyDrop } = useCat();
   const { theme } = useTheme();
   const themeArt = THEME_CAT_ART[theme] ?? null;
+
+  // AI chat (Money Buddy conversation, merged into the modal).
+  const { expenses } = useExpenses();
+  const { budgets } = useBudgets();
+  const {
+    status: chatStatus,
+    messages,
+    sending,
+    sendError,
+    suggestions,
+    sendMessage,
+    clearMessages,
+    dismissError,
+  } = useConversation(expenses, budgets, null);
 
   const [pose, setPose] = useState<CatPose>("idle");
   const sceneBg = themeArt ? themeArt.poses[pose] : CAT_BACKGROUND;
@@ -44,7 +93,9 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
   const [dropNotice, setDropNotice] = useState<CatItem | null>(null);
   const [checkinItems, setCheckinItems] = useState<CatItem[] | null>(null);
   const [rewardShow, setRewardShow] = useState<{ title: string; items: CatItem[] } | null>(null);
+  const [chatInput, setChatInput] = useState("");
   const poseTimer = useRef<number | null>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
 
   // Reset when opened.
   useEffect(() => {
@@ -56,7 +107,7 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
       setBubble(state.asleep ? "Zzz… (the lucky cat is asleep)" : "Let's make today a great logging day!");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open ]);
+  }, [open]);
 
   // Revert to idle/sleep pose after a few seconds.
   const revertPose = (ms = 3500) => {
@@ -69,11 +120,35 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
     if (poseTimer.current) window.clearTimeout(poseTimer.current);
   }, []);
 
+  // Show the latest AI reply in the speech bubble (2-3 sentences).
+  const lastAssistant = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "assistant") return messages[i];
+    }
+    return null;
+  }, [messages]);
+
+  useEffect(() => {
+    if (lastAssistant && open) {
+      setBubble(toBubbleText(lastAssistant.text));
+      setPose("talk");
+      revertPose(6000);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastAssistant?.id]);
+
+  // Auto-scroll chat history to bottom.
+  useEffect(() => {
+    const el = chatScrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages.length]);
+
   const checkDrop = () => {
     const drop = maybeHappyDrop(expenseStats);
     if (drop) {
       setDropNotice(drop);
       setBubble(`Wow! The lucky cat dropped ${drop.emoji} ${drop.name}!`);
+      playPop();
       window.setTimeout(() => setDropNotice(null), 4000);
     }
   };
@@ -92,72 +167,85 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
     const res = checkIn();
     if (res.ok) {
       setCheckinItems(res.items);
-      setBubble(`Checked in! ${res.streak}-day streak — you got ${res.items.length} items 🎁`);
-      if (res.items.length > 0) {
-        setRewardShow({ title: `Daily Check-in (Day ${res.streak})`, items: res.items });
-      }
+      setBubble(`Check-in day ${res.streak}! The lucky cat got ${res.items.length} gift${res.items.length > 1 ? "s" : ""}!`);
+      playPop();
+      setPose("play");
+      revertPose();
+      window.setTimeout(() => setCheckinItems(null), 5000);
     }
   };
 
-  const usePickedItem = (kind: ItemKind, item: CatItem) => {
-    let used: CatItem | null = null;
-    if (kind === "food") {
-      used = feed(item.id);
-      if (used) {
-        setPose("eat");
-        setBubble(`Yum! ${used.emoji} ${used.name} is delicious!`);
-      }
-    } else if (kind === "toy") {
-      used = play(item.id);
-      if (used) {
-        setPose("play");
-        setBubble(`So fun! The ${used.emoji} ${used.name} is the best!`);
-      }
-    } else {
-      used = groom(item.id);
-      if (used) {
-        setPose("groom");
-        setBubble(`So relaxing… the ${used.emoji} ${used.name} feels amazing, purr…`);
-      }
+  const doUseItem = (kind: ItemKind, itemId: string) => {
+    const fn = kind === "food" ? feed : kind === "toy" ? play : groom;
+    const item = fn(itemId);
+    if (!item) {
+      setBubble("Hmm, nothing to use…");
+      return;
     }
-    if (used) {
-      setPicker(null);
-      revertPose();
-      checkDrop();
-    }
+    setPicker(null);
+    const label = kind === "food" ? "Yum!" : kind === "toy" ? "Whee!" : "Ahh, so fresh!";
+    setBubble(`${label} ${item.emoji} ${item.name}`);
+    setPose(kind === "food" ? "eat" : kind === "toy" ? "play" : "groom");
+    playHappy();
+    revertPose();
+    checkDrop();
   };
 
   const doCleanLitter = () => {
     const found = cleanLitter();
-    setPose("poop");
-    if (found.length > 0) {
-      setBubble(`Litter box cleaned! Found ${found.map((f) => `${f.emoji} ${f.name}`).join(", ")} ✨`);
-    } else {
-      setBubble("The litter box is sparkling clean — the cat approves!");
-    }
+    setBubble(found.length > 0 ? `Litter box cleaned! Found ${found[0].emoji} ${found[0].name}!` : "Litter box cleaned. So fresh!");
+    setPose("play");
+    playHappy();
     revertPose();
     checkDrop();
   };
 
   const doToggleSleep = () => {
+    const goingToSleep = !state.asleep;
     toggleSleep();
-    if (!state.asleep) {
+    if (goingToSleep) {
       setPose("sleep");
-      setBubble("Zzz… (asleep — tap Wake to wake up)");
+      setBubble("Zzz… (the lucky cat is asleep)");
+      playSnore();
     } else {
       setPose("idle");
-      setBubble("I'm awake! Want to play?");
+      setBubble("Yaaawn… I'm awake! Want to play?");
+      playYawn();
       revertPose();
     }
+  };
+
+  const handleSendChat = async () => {
+    const text = chatInput.trim();
+    if (!text || sending) return;
+    setChatInput("");
+    try {
+      await sendMessage(text);
+    } catch {
+      /* error shown via sendError */
+    }
+  };
+
+  const handleSuggestion = (q: string) => {
+    setChatInput(q);
+    // Send immediately for a snappy Tamagotchi feel.
+    void (async () => {
+      try {
+        await sendMessage(q);
+      } catch {
+        /* error shown via sendError */
+      }
+    })();
   };
 
   if (!open) return null;
 
   const pickerItems = picker ? ownedByKind[picker] : [];
+  const chatReady = chatStatus === "ready";
 
   return (
     <div className="cat-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-label="Lucky cat companion">
-      <div className="cat-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="cat-modal cat-modal--tama" onClick={(e) => e.stopPropagation()}>
         <div className="cat-modal-header">
           <span className="cat-modal-title">🐱 Lucky Cat</span>
           <div className="cat-happiness" title={`Joy ${state.happiness}`}>
@@ -167,60 +255,87 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
             </div>
             <span className="cat-happiness-num">{state.happiness}</span>
           </div>
+          {canCheckIn ? (
+            <button className="cat-checkin-btn" onClick={doCheckIn}>
+              🎁 Check-in
+            </button>
+          ) : (
+            <span className="cat-checkin-done" title={`Streak ${state.checkinStreak}`}>
+              ✅ Day {state.checkinStreak}
+            </span>
+          )}
           <button className="cat-modal-close" onClick={onClose} aria-label="Close">✕</button>
         </div>
 
-        {/* Scene: cozy room + cat pose + speech bubble */}
-        <div className="cat-scene" style={sceneBg ? { backgroundImage: `url(${sceneBg})` } : undefined}>
-          {bubble && <div className="cat-bubble">{bubble}</div>}
-          {!themeArt && (
-            CAT_POSES[pose] ? (
-              <img className="cat-figure" src={CAT_POSES[pose]} alt="Lucky cat" />
-            ) : (
-              <div className="cat-figure cat-figure--emoji">🐱</div>
-            )
-          )}
-          {state.asleep && <div className="cat-sleep-z">💤</div>}
+        {/* Tamagotchi stat bars */}
+        <div className="cat-stats">
+          <StatBar icon="🍖" label="Satiety" value={state.satiety} color="#f5a623" />
+          <StatBar icon="😊" label="Mood" value={state.happiness} color="#f76b8a" />
+          <StatBar icon="🧼" label="Clean" value={state.cleanliness} color="#4fc3f7" />
+          <StatBar icon="⚡" label="Energy" value={state.energy} color="#66bb6a" />
         </div>
 
-        {/* Drop / check-in notices */}
-        {dropNotice && (
-          <div className="cat-notice">🎁 Dropped: {dropNotice.emoji} {dropNotice.name}</div>
-        )}
-        {checkinItems && (
-          <div className="cat-notice">📅 Check-in rewards: {checkinItems.map((i) => `${i.emoji} ${i.name}`).join(", ")}</div>
-        )}
-
-        {/* Item picker */}
-        {picker && (
-          <div className="cat-picker">
-            <div className="cat-picker-title">
-              {picker === "food" ? "Pick a treat to feed" : picker === "toy" ? "Pick a toy to play with" : "Pick a care item"}
-              <button className="cat-picker-close" onClick={() => setPicker(null)}>✕</button>
+        <div className="cat-scene" style={sceneBg ? { backgroundImage: `url(${sceneBg})` } : undefined}>
+              {bubble && <div className="cat-bubble">{bubble}</div>}
+              {!themeArt && (
+                CAT_POSES[pose] ? (
+                  <img className="cat-figure" src={CAT_POSES[pose]} alt="Lucky cat" />
+                ) : (
+                  <div className="cat-figure cat-figure--emoji">🐱</div>
+                )
+              )}
+              {state.asleep && <div className="cat-sleep-z">💤</div>}
             </div>
-            <p className="muted" style={{ fontSize: 12, margin: "0 0 8px" }}>
-              {picker === "food"
-                ? "🍖 Food keeps your cat happy and fed."
-                : picker === "toy"
-                  ? "🐾 Toys are for playtime together!"
-                  : "💆 Care items make grooming extra relaxing."}
-            </p>
+
+            {dropNotice && (
+              <div className="cat-notice" role="status">
+                🎁 Lucky drop: {dropNotice.emoji} {dropNotice.name}
+              </div>
+            )}
+            {checkinItems && checkinItems.length > 0 && (
+              <div className="cat-notice" role="status">
+                🎁 Check-in gifts: {checkinItems.map((i) => `${i.emoji} ${i.name}`).join(", ")}
+              </div>
+            )}
+
+            <div className="cat-actions">
+              <button className="cat-action" onClick={() => setPicker("food")} disabled={state.asleep}>
+                🍖<span>{ACTION_LABELS.feed}</span>
+              </button>
+              <button className="cat-action" onClick={doCleanLitter} disabled={state.asleep}>
+                💩<span>{ACTION_LABELS.poop}</span>
+              </button>
+              <button className="cat-action" onClick={() => setPicker("toy")} disabled={state.asleep}>
+                🐾<span>{ACTION_LABELS.play}</span>
+              </button>
+              <button className="cat-action" onClick={() => setPicker("care")} disabled={state.asleep}>
+                💆<span>{ACTION_LABELS.groom}</span>
+              </button>
+              <button className="cat-action" onClick={doToggleSleep}>
+                {state.asleep ? "☀️" : "🌙"}<span>{state.asleep ? ACTION_LABELS.wake : ACTION_LABELS.sleep}</span>
+              </button>
+            </div>
+
+        {/* Item picker (overlay) */}
+        {picker && (
+          <div className="cat-picker" role="dialog" aria-label={`Choose ${picker}`}>
+            <div className="cat-picker-header">
+              <span>{picker === "food" ? "🍖 Choose food" : picker === "toy" ? "🧸 Choose toy" : "🧼 Choose care item"}</span>
+              <button className="cat-modal-close" onClick={() => setPicker(null)} aria-label="Close picker">✕</button>
+            </div>
             {pickerItems.length === 0 ? (
-              <p className="muted" style={{ fontSize: 13 }}>
-                Backpack is empty — check in daily to earn items!
-              </p>
+              <p className="muted">No {picker} items yet — check in daily to earn some!</p>
             ) : (
-              <div className="cat-picker-items">
-                {pickerItems.map((item: CatItem & { count?: number }) => (
+              <div className="cat-picker-grid">
+                {pickerItems.map((item) => (
                   <button
                     key={item.id}
-                    className="cat-item-btn"
-                    onClick={() => usePickedItem(picker, item)}
-                    title={item.blurb}
+                    className="cat-picker-item"
+                    onClick={() => doUseItem(picker, item.id)}
                   >
-                    <span className="cat-item-emoji">{item.emoji}</span>
-                    <span className="cat-item-name">{item.name}</span>
-                    <span className="cat-item-count">×{item.count ?? state.inventory[item.id] ?? 0}</span>
+                    <span className="cat-picker-emoji">{item.emoji}</span>
+                    <span className="cat-picker-name">{item.name}</span>
+                    <span className="cat-picker-count">×{(item as CatItem & { count: number }).count}</span>
                   </button>
                 ))}
               </div>
@@ -228,50 +343,90 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
           </div>
         )}
 
-        {/* Inventory strip */}
-        <div className="cat-inventory">
-          <span className="cat-inventory-label">🎒 Backpack</span>
-          {Object.keys(state.inventory).length === 0 ? (
-            <span className="muted" style={{ fontSize: 12 }}>Empty — check in to earn items</span>
-          ) : (
-            <div className="cat-inventory-items">
-              {Object.entries(state.inventory).map(([id, count]) => {
-                const item = getItem(id);
-                if (!item || count <= 0) return null;
-                return (
-                  <span key={id} className="cat-inventory-item" title={`${item.name}：${item.blurb}`}>
-                    {item.emoji}×{count}
-                  </span>
-                );
-              })}
-            </div>
-          )}
-        </div>
+            {/* AI chat */}
+            <div className="cat-chat">
+              <div className="cat-chat-header">
+                <span className="cat-chat-title">💬 AI Chat</span>
+                {messages.length > 0 && (
+                  <button
+                    type="button"
+                    className="cat-link-btn cat-link-btn--danger"
+                    onClick={() => void clearMessages()}
+                  >
+                    Clear history
+                  </button>
+                )}
+              </div>
 
-        {/* Actions */}
-        <div className="cat-actions">
-          {canCheckIn && (
-            <button className="cat-action cat-action--checkin" onClick={doCheckIn}>
-              📅 Check in
-            </button>
-          )}
-          <button className="cat-action" onClick={() => setPicker("food")} disabled={state.asleep}>
-            🍖<span>{ACTION_LABELS.feed}</span>
-          </button>
-          <button className="cat-action" onClick={() => setPicker("toy")} disabled={state.asleep}>
-            🐾<span>{ACTION_LABELS.play}</span>
-          </button>
-          <button className="cat-action" onClick={() => setPicker("care")} disabled={state.asleep}>
-            💆<span>{ACTION_LABELS.groom}</span>
-          </button>
-          <button className="cat-action" onClick={doCleanLitter} disabled={state.asleep}>
-            💩<span>{ACTION_LABELS.poop}</span>
-          </button>
-          <button className="cat-action" onClick={doToggleSleep}>
-            {state.asleep ? "☀️" : "🌙"}<span>{state.asleep ? ACTION_LABELS.wake : ACTION_LABELS.sleep}</span>
-          </button>
-        </div>
-        {!loaded && <p className="muted" style={{ fontSize: 12 }}>Loading…</p>}
+              <div className="cat-chat-history cat-chat-history--desktop" ref={chatScrollRef}>
+                {messages.length === 0 && (
+                  <div className="cat-chat-empty">
+                    <p className="cat-chat-empty-title">Hey, I'm your Money Buddy! 🐱</p>
+                    <p className="muted">Ask me about your spending, budgets, or money habits.</p>
+                  </div>
+                )}
+                {messages.map((m: ConversationMessage) => (
+                  <div key={m.id} className={`cat-msg cat-msg--${m.role}`}>
+                    <span className="cat-msg-role">{m.role === "user" ? "You" : "🐱"}</span>
+                    <span className="cat-msg-text">{m.text}</span>
+                  </div>
+                ))}
+                {sending && <div className="cat-msg cat-msg--assistant"><span className="cat-msg-role">🐱</span><span className="cat-typing">…</span></div>}
+              </div>
+
+              {sendError && (
+                <div className="cat-chat-error" role="alert">
+                  {sendError}
+                  <button type="button" className="cat-link-btn" onClick={dismissError}>Dismiss</button>
+                </div>
+              )}
+
+              {chatReady && suggestions.length > 0 && (
+                <div className="cat-suggestions">
+                  {suggestions.slice(0, 3).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      className="cat-suggestion-chip"
+                      disabled={sending || state.asleep}
+                      onClick={() => handleSuggestion(s)}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="cat-chat-input-row">
+                <input
+                  type="text"
+                  className="cat-chat-input"
+                  placeholder="Ask about your spending…"
+                  value={chatInput}
+                  disabled={!chatReady || sending || state.asleep}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") void handleSendChat();
+                  }}
+                />
+                <button
+                  type="button"
+                  className="cat-chat-send"
+                  disabled={!chatReady || sending || !chatInput.trim() || state.asleep}
+                  onClick={() => void handleSendChat()}
+                  aria-label="Send"
+                >
+                  ➤
+                </button>
+              </div>
+              {chatStatus !== "ready" && (
+                <p className="muted">
+                  {chatStatus === "loading" ? "AI is getting ready…" : "AI unavailable"}
+                </p>
+              )}
+            </div>
+
+        {!loaded && <p className="muted">Loading…</p>}
       </div>
       {rewardShow && (
         <RewardCelebration
