@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -21,7 +21,6 @@ import { CategoryBreakdown } from "./CategoryBreakdown";
 import { RecentExpenses } from "./RecentExpenses";
 import { CatLauncher } from "@/features/cat/CatLauncher";
 import { CatCompanionModal } from "@/features/cat/CatCompanionModal";
-import { useInsight } from "@/features/ai/useInsight";
 import { DailyDelightCard } from "@/features/delight/DailyDelightCard";
 import { useGamification } from "@/features/gamification/useGamification";
 import { BadgeCelebration } from "@/features/gamification/BadgeCelebration";
@@ -62,13 +61,6 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
   // Memoize by ID to avoid re-firing on every render when the same expense
   // is returned as a new object reference (e.g. after expenses array refresh).
   const recentExpenses = sortExpensesByRecency(monthExpenses).slice(0, 4);
-  const latestExpenseRef = sortExpensesByRecency(monthExpenses)[0] ?? null;
-  const latestExpense = useMemo(
-    () => latestExpenseRef,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [latestExpenseRef?.id]
-  );
-  const insight = useInsight(latestExpense, expenses, budgets);
   // Badge unlocks are checked here so they fire wherever the user is;
   // the badges themselves live on the profile page.
   const { streak, newlyUnlocked } = useGamification(expenses, budgets.length);
@@ -157,7 +149,6 @@ export function DashboardPage({ onNavigate }: { onNavigate: (path: string) => vo
           <CatCompanionModal
             open={catOpen}
             onClose={() => setCatOpen(false)}
-            insightResult={insight.status === "ready" ? (insight.result ?? null) : null}
             expenseStats={{
               streakDays: streak.current,
               longestStreak: streak.longest,
