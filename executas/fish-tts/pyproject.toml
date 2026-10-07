@@ -1,6 +1,6 @@
 [project]
 name = "fish-tts"
-version = "1.0.0"
+version = "1.0.1"
 description = "Money Companion — Fish Audio TTS adapter"
 requires-python = ">=3.11"
 dependencies = [
