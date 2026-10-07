@@ -1,8 +1,1 @@
-{
-  "slug": "money-companion",
-  "name": "Money Companion",
-  "version": "1.0.1",
-  "bundled_executas": {
-    "fish-tts": { "path": "./executas/fish-tts" }
-  }
-}
+ewogICJzbHVnIjogIm1vbmV5LWNvbXBhbmlvbiIsCiAgIm5hbWUiOiAiTW9uZXkgQ29tcGFuaW9uIiwKICAidmVyc2lvbiI6ICIxLjAuMiIsCiAgImJ1bmRsZWRfZXhlY3V0YXMiOiB7CiAgICAiZmlzaC10dHMiOiB7CiAgICAgICJwYXRoIjogIi4vZXhlY3V0YXMvZmlzaC10dHMiCiAgICB9CiAgfQp9Cg==
