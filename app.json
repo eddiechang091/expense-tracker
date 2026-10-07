@@ -1,7 +1,7 @@
 {
   "slug": "money-companion",
   "name": "Money Companion",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "bundled_executas": {
     "fish-tts": {
       "path": "./executas/fish-tts"
