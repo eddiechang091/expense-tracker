@@ -25,11 +25,6 @@
             "entrypoint": "bin/tool-dev-fish-tts",
             "format": "tar.gz"
           },
-          "darwin-x86_64": {
-            "path": "dist/tool-dev-fish-tts-1.0.0-darwin-x86_64.tar.gz",
-            "entrypoint": "bin/tool-dev-fish-tts",
-            "format": "tar.gz"
-          },
           "linux-x86_64": {
             "path": "dist/tool-dev-fish-tts-1.0.0-linux-x86_64.tar.gz",
             "entrypoint": "bin/tool-dev-fish-tts",
