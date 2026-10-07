@@ -577,3 +577,140 @@
   opacity: 0.4;
   cursor: default;
 }
+
+/* --- Desktop two-column layout --- */
+.cat-modal--desktop {
+  max-width: 960px;
+  width: 96%;
+}
+
+.cat-tama-body {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 0;
+  min-height: 520px;
+}
+
+.cat-tama-left {
+  padding: 6px 14px 14px;
+  border-right: 1px solid var(--border, #f0e8da);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cat-tama-right {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Bigger fonts for desktop */
+.cat-modal--desktop .cat-stat {
+  font-size: 13px;
+}
+
+.cat-modal--desktop .cat-stat-track {
+  height: 10px;
+}
+
+.cat-modal--desktop .cat-scene {
+  min-height: 300px;
+}
+
+.cat-modal--desktop .cat-bubble {
+  font-size: 15px;
+  max-width: 88%;
+}
+
+.cat-modal--desktop .cat-actions {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.cat-modal--desktop .cat-action {
+  font-size: 13px;
+  padding: 10px 4px;
+}
+
+/* Chat takes full right column height */
+.cat-modal--desktop .cat-chat {
+  border-top: none;
+  margin-top: 0;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 520px;
+}
+
+.cat-modal--desktop .cat-chat-title {
+  font-size: 15px;
+}
+
+.cat-modal--desktop .cat-chat-history--desktop {
+  flex: 1;
+  max-height: none;
+  min-height: 280px;
+  font-size: 14px;
+}
+
+.cat-modal--desktop .cat-msg {
+  font-size: 14px;
+  max-width: 88%;
+}
+
+.cat-modal--desktop .cat-chat-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-muted);
+}
+
+.cat-modal--desktop .cat-chat-empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.cat-modal--desktop .cat-suggestion-chip {
+  font-size: 13px;
+  padding: 8px 14px;
+}
+
+.cat-modal--desktop .cat-chat-input {
+  font-size: 14px;
+  padding: 10px 16px;
+}
+
+.cat-modal--desktop .cat-chat-send {
+  width: 44px;
+  height: 44px;
+  font-size: 18px;
+}
+
+.cat-modal--desktop .cat-link-btn {
+  font-size: 13px;
+}
+
+/* Responsive: stack on narrow screens */
+@media (max-width: 760px) {
+  .cat-modal--desktop {
+    max-width: 420px;
+  }
+  .cat-tama-body {
+    grid-template-columns: 1fr;
+  }
+  .cat-tama-left {
+    border-right: none;
+    border-bottom: 1px solid var(--border, #f0e8da);
+  }
+  .cat-modal--desktop .cat-chat {
+    min-height: 320px;
+  }
+  .cat-modal--desktop .cat-chat-history--desktop {
+    min-height: 180px;
+    max-height: 240px;
+  }
+}
