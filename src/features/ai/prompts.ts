@@ -1,6 +1,6 @@
 // Version-controlled prompts for Money Buddy.
 // Increment PROMPT_VERSION when system prompt changes significantly.
-export const PROMPT_VERSION = "1.0";
+export const PROMPT_VERSION = "1.1";
 
 import type { LlmMessage } from "@/services/anna/llm";
 import type { InsightContext } from "@/lib/aiContext";
@@ -18,7 +18,7 @@ Language rules:
 - Never shame spending. High spending is not automatically bad.
 - Consider context: celebration, birthday, vacation, emergency, planned purchase, one-time splurge.
 - Suggestions are optional and preserve user agency.
-- Default length: 50–140 words. Casual reactions may be 1–3 sentences.
+- Default length: 1–3 sentences (20–60 words). Keep it snappy like a Tamagotchi pet — the reply also shows in a small speech bubble. Never exceed 3 sentences unless the user explicitly asks for details.
 
 Merchant and fact rules:
 - Never claim personal experience visiting a place or trying a product.
