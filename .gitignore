@@ -6,7 +6,7 @@ data/*.db*
 .env*.local
 executas/**/.env
 .clinerules/*
-.github/*
+.github/*.md
 !.github/workflows/
 !.github/workflows/*
 .vscode/*
