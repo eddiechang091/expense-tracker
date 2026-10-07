@@ -1,7 +1,7 @@
 {
   "slug": "fish-tts",
   "name": "Fish Audio TTS",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "executa_type": "tool",
   "tool_id": "tool-dev-fish-tts",
   "type": "python",
@@ -22,22 +22,22 @@
         "binary_artifacts": {
           "darwin-arm64": {
             "path": "dist/tool-dev-fish-tts-1.0.1-darwin-arm64.tar.gz",
-            "entrypoint": "bin/tool-dev-fish-tts",
+            "entrypoint": "tool-dev-fish-tts",
             "format": "tar.gz"
           },
           "darwin-x86_64": {
             "path": "dist/tool-dev-fish-tts-1.0.1-darwin-x86_64.tar.gz",
-            "entrypoint": "bin/tool-dev-fish-tts",
+            "entrypoint": "tool-dev-fish-tts",
             "format": "tar.gz"
           },
           "linux-x86_64": {
             "path": "dist/tool-dev-fish-tts-1.0.1-linux-x86_64.tar.gz",
-            "entrypoint": "bin/tool-dev-fish-tts",
+            "entrypoint": "tool-dev-fish-tts",
             "format": "tar.gz"
           },
           "windows-x86_64": {
             "path": "dist/tool-dev-fish-tts-1.0.1-windows-x86_64.zip",
-            "entrypoint": "bin/tool-dev-fish-tts.exe",
+            "entrypoint": "tool-dev-fish-tts.exe",
             "format": "zip"
           }
         }
