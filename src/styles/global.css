@@ -941,6 +941,17 @@ a:hover { text-decoration: underline; }
 }
 .profile-identity { flex: 1; min-width: 0; }
 .profile-name { font-size: 22px; font-weight: 750; overflow-wrap: anywhere; }
+.profile-name-edit {
+  margin-left: 8px;
+  padding: 2px 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  opacity: 0.55;
+  vertical-align: middle;
+}
+.profile-name-edit:hover { opacity: 1; }
 .profile-status {
   margin-top: 4px;
   display: inline-flex;
@@ -952,9 +963,7 @@ a:hover { text-decoration: underline; }
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   padding: 4px 12px;
-  cursor: pointer;
 }
-.profile-status:hover { border-color: var(--primary); }
 .profile-status-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
 .status-chip {
   display: inline-flex;
