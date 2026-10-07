@@ -1,0 +1,116 @@
+name: Build Fish TTS Executa Binaries
+
+# Manual release builds for the bundled fish-tts Executa.
+# Run via: Actions tab → this workflow → "Run workflow" → version (default 1.0.0)
+#
+# Produces 4 standalone binaries (PyInstaller --onefile), uploads them to a
+# GitHub Release, then download the archives into executas/fish-tts/dist/
+# (paths must match binary_artifacts in executas/fish-tts/executa.json)
+# before running `anna-app apps publish`.
+#
+# Re-run whenever executas/fish-tts code, dependencies, or the executa
+# version changes. linux-x86_64 must not be omitted (Anna Cloud Agent).
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Executa version to build (must match executa.json)'
+        required: true
+        default: '1.0.0'
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: darwin-arm64
+            runs_on: macos-14
+            format: tar.gz
+          - platform: darwin-x86_64
+            # NOTE: if macos-13 is retired, use macos-15-intel or drop this leg
+            runs_on: macos-13
+            format: tar.gz
+          - platform: linux-x86_64
+            runs_on: ubuntu-latest
+            format: tar.gz
+          - platform: windows-x86_64
+            runs_on: windows-latest
+            format: zip
+
+    runs-on: ${{ matrix.runs_on }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build binary + protocol smoke test
+        run: |
+          cd executas/fish-tts
+          chmod +x build_binary.sh
+          ./build_binary.sh --test
+
+      - name: Package release archive (Unix)
+        if: matrix.format == 'tar.gz'
+        run: |
+          cd executas/fish-tts
+          mkdir -p pkg/bin dist
+          cp build/dist/tool-dev-fish-tts pkg/bin/
+          (cd pkg && tar -czf "../dist/tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.tar.gz" bin)
+          cd dist
+          sha256sum "tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.tar.gz" > "tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.tar.gz.sha256"
+          tar -tzf "tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.tar.gz"
+
+      - name: Package release archive (Windows)
+        if: matrix.format == 'zip'
+        shell: pwsh
+        run: |
+          cd executas/fish-tts
+          New-Item -ItemType Directory -Force -Path pkg/bin, dist | Out-Null
+          Copy-Item build/dist/tool-dev-fish-tts.exe pkg/bin/
+          Compress-Archive -Path pkg/bin -DestinationPath "dist/tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.zip" -Force
+          cd dist
+          (Get-FileHash "tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.zip" -Algorithm SHA256).Hash.ToLower() + "  tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.zip" | Out-File -Encoding ascii "tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.zip.sha256"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: fish-tts-${{ matrix.platform }}
+          path: |
+            executas/fish-tts/dist/tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.${{ matrix.format }}
+            executas/fish-tts/dist/tool-dev-fish-tts-${{ inputs.version }}-${{ matrix.platform }}.${{ matrix.format }}.sha256
+          retention-days: 90
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: fish-tts-v${{ inputs.version }}
+          name: fish-tts v${{ inputs.version }}
+          artifacts: |
+            artifacts/fish-tts-darwin-arm64/*
+            artifacts/fish-tts-darwin-x86_64/*
+            artifacts/fish-tts-linux-x86_64/*
+            artifacts/fish-tts-windows-x86_64/*
+          allowUpdates: true
+          draft: false
