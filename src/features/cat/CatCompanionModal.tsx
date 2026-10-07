@@ -2,8 +2,7 @@
 //
 // Floating semi-transparent modal over the Dashboard: a cozy cat-room scene
 // with the cat (pose changes per interaction), action buttons, inventory,
-// happiness meter, and daily check-in. Talk reuses the existing TTS spending
-// summary.
+// happiness meter, and daily check-in.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCat } from "@/services/cat/useCat";
@@ -14,15 +13,11 @@ import { useTheme } from "@/services/theme/useTheme";
 import { CAT_ITEMS, getItem } from "@/services/cat/items";
 import type { CatItem, ItemKind } from "@/services/cat/types";
 import { RewardCelebration } from "./RewardCelebration";
-import { useTTS } from "@/services/tts/useTTS";
-import { resultToSpeechText } from "@/services/tts/textUtils";
-import type { InsightResult } from "@/lib/aiSchema";
 import "./catCompanion.css";
 
 interface CatCompanionModalProps {
   open: boolean;
   onClose: () => void;
-  insightResult: InsightResult | null;
   expenseStats: { streakDays: number; longestStreak: number; totalExpenses: number };
 }
 
@@ -35,14 +30,12 @@ const ACTION_LABELS: Record<string, string> = {
   poop: "Litter",
   sleep: "Sleep",
   wake: "Wake",
-  talk: "Talk",
 };
 
-export function CatCompanionModal({ open, onClose, insightResult, expenseStats }: CatCompanionModalProps) {
+export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionModalProps) {
   const { state, loaded, checkIn, canCheckIn, feed, play, groom, cleanLitter, toggleSleep, maybeHappyDrop } = useCat();
   const { theme } = useTheme();
   const themeArt = THEME_CAT_ART[theme] ?? null;
-  const { speak, isSpeaking } = useTTS();
 
   const [pose, setPose] = useState<CatPose>("idle");
   const sceneBg = themeArt ? themeArt.poses[pose] : CAT_BACKGROUND;
@@ -156,22 +149,6 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
       setBubble("I'm awake! Want to play?");
       revertPose();
     }
-  };
-
-  const doTalk = () => {
-    if (!insightResult) {
-      setBubble("Let me crunch this month's numbers…");
-      return;
-    }
-    setPose("talk");
-    setBubble("Let me tell you about this month's spending!");
-    const text = resultToSpeechText(insightResult);
-    try {
-      speak(text);
-    } catch {
-      /* TTS unavailable */
-    }
-    revertPose(8000);
   };
 
   if (!open) return null;
@@ -292,9 +269,6 @@ export function CatCompanionModal({ open, onClose, insightResult, expenseStats }
           </button>
           <button className="cat-action" onClick={doToggleSleep}>
             {state.asleep ? "☀️" : "🌙"}<span>{state.asleep ? ACTION_LABELS.wake : ACTION_LABELS.sleep}</span>
-          </button>
-          <button className="cat-action" onClick={doTalk} disabled={state.asleep || isSpeaking}>
-            🎧<span>{ACTION_LABELS.talk}</span>
           </button>
         </div>
         {!loaded && <p className="muted" style={{ fontSize: 12 }}>Loading…</p>}
