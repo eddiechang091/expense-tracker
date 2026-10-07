@@ -174,15 +174,24 @@ export function ProfilePage() {
               </div>
             ) : (
               <>
-                <h2 className="profile-name">{loaded ? profile.displayName : "…"}</h2>
-                <button
-                  type="button"
-                  className="profile-status"
-                  onClick={() => setEditing(true)}
-                  title="Edit profile"
-                >
+                <h2 className="profile-name">
+                  {loaded ? profile.displayName : "…"}
+                  <button
+                    type="button"
+                    className="profile-name-edit"
+                    onClick={() => {
+                      setName(profile.displayName);
+                      setEditing(true);
+                    }}
+                    title="Edit name"
+                    aria-label="Edit display name"
+                  >
+                    <span aria-hidden="true">✏️</span>
+                  </button>
+                </h2>
+                <span className="profile-status">
                   <span aria-hidden="true">{status.emoji}</span> {status.label}
-                </button>
+                </span>
               </>
             )}
           </div>
@@ -285,6 +294,8 @@ export function ProfilePage() {
       {shareBadge ? (
         <BadgeCelebration
           badges={[shareBadge]}
+          displayName={profile.displayName}
+          streakDays={streak.current}
           onDone={() => setShareBadge(null)}
         />
       ) : null}
