@@ -6,13 +6,41 @@
   "tool_id": "tool-dev-fish-tts",
   "type": "python",
   "distribution": {
-    "active": "local",
+    "active": "binary",
     "profiles": {
       "local": {
         "type": "local",
         "package_name": "tool-dev-fish-tts",
         "executable_name": "tool-dev-fish-tts",
         "supports_protocol": true
+      },
+      "binary": {
+        "type": "binary",
+        "package_name": "tool-dev-fish-tts",
+        "executable_name": "tool-dev-fish-tts",
+        "supports_protocol": true,
+        "binary_artifacts": {
+          "darwin-arm64": {
+            "path": "dist/tool-dev-fish-tts-1.0.0-darwin-arm64.tar.gz",
+            "entrypoint": "bin/tool-dev-fish-tts",
+            "format": "tar.gz"
+          },
+          "darwin-x86_64": {
+            "path": "dist/tool-dev-fish-tts-1.0.0-darwin-x86_64.tar.gz",
+            "entrypoint": "bin/tool-dev-fish-tts",
+            "format": "tar.gz"
+          },
+          "linux-x86_64": {
+            "path": "dist/tool-dev-fish-tts-1.0.0-linux-x86_64.tar.gz",
+            "entrypoint": "bin/tool-dev-fish-tts",
+            "format": "tar.gz"
+          },
+          "windows-x86_64": {
+            "path": "dist/tool-dev-fish-tts-1.0.0-windows-x86_64.zip",
+            "entrypoint": "bin/tool-dev-fish-tts.exe",
+            "format": "zip"
+          }
+        }
       }
     }
   }
