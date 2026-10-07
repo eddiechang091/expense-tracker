@@ -316,6 +316,33 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
               </button>
             </div>
 
+        {/* Item picker (overlay) */}
+        {picker && (
+          <div className="cat-picker" role="dialog" aria-label={`Choose ${picker}`}>
+            <div className="cat-picker-header">
+              <span>{picker === "food" ? "🍖 Choose food" : picker === "toy" ? "🧸 Choose toy" : "🧼 Choose care item"}</span>
+              <button className="cat-modal-close" onClick={() => setPicker(null)} aria-label="Close picker">✕</button>
+            </div>
+            {pickerItems.length === 0 ? (
+              <p className="muted">No {picker} items yet — check in daily to earn some!</p>
+            ) : (
+              <div className="cat-picker-grid">
+                {pickerItems.map((item) => (
+                  <button
+                    key={item.id}
+                    className="cat-picker-item"
+                    onClick={() => doUseItem(picker, item.id)}
+                  >
+                    <span className="cat-picker-emoji">{item.emoji}</span>
+                    <span className="cat-picker-name">{item.name}</span>
+                    <span className="cat-picker-count">×{(item as CatItem & { count: number }).count}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
             {/* AI chat */}
             <div className="cat-chat">
               <div className="cat-chat-header">
@@ -398,33 +425,6 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
                 </p>
               )}
             </div>
-
-        {/* Item picker (overlay) */}
-        {picker && (
-          <div className="cat-picker" role="dialog" aria-label={`Choose ${picker}`}>
-            <div className="cat-picker-header">
-              <span>{picker === "food" ? "🍖 Choose food" : picker === "toy" ? "🧸 Choose toy" : "🧼 Choose care item"}</span>
-              <button className="cat-modal-close" onClick={() => setPicker(null)} aria-label="Close picker">✕</button>
-            </div>
-            {pickerItems.length === 0 ? (
-              <p className="muted">No {picker} items yet — check in daily to earn some!</p>
-            ) : (
-              <div className="cat-picker-grid">
-                {pickerItems.map((item) => (
-                  <button
-                    key={item.id}
-                    className="cat-picker-item"
-                    onClick={() => doUseItem(picker, item.id)}
-                  >
-                    <span className="cat-picker-emoji">{item.emoji}</span>
-                    <span className="cat-picker-name">{item.name}</span>
-                    <span className="cat-picker-count">×{(item as CatItem & { count: number }).count}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
 
         {!loaded && <p className="muted">Loading…</p>}
       </div>
