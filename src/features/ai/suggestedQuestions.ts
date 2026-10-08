@@ -79,10 +79,26 @@ function wasAsked(candidate: string, asked: string[]): boolean {
   return false;
 }
 
+import type { ConversationMessage } from "./conversationTypes";
+
+/** Extract follow-up questions from the last N assistant messages. */
+function recentFollowUps(messages: ConversationMessage[], n = 2): string[] {
+  const followUps: string[] = [];
+  for (let i = messages.length - 1; i >= 0 && followUps.length < n; i--) {
+    const m = messages[i];
+    if (m.role === "assistant" && m.result?.followUpQuestion) {
+      const q = m.result.followUpQuestion.trim();
+      if (q && !followUps.includes(q)) followUps.push(q);
+    }
+  }
+  return followUps;
+}
+
 export function buildSuggestedQuestions(
   ctx: ConversationContext,
   hasMessages: boolean,
-  userMessages: string[] = []
+  userMessages: string[] = [],
+  allMessages: ConversationMessage[] = []
 ): string[] {
   if (!hasMessages) return [...WELCOME_SUGGESTIONS];
 
@@ -91,6 +107,9 @@ export function buildSuggestedQuestions(
   const pushIfNew = (q: string) => {
     if (!wasAsked(q, asked) && !suggestions.includes(q)) suggestions.push(q);
   };
+
+  // At least 2 follow-up questions based on previous AI answers
+  for (const q of recentFollowUps(allMessages, 2)) pushIfNew(q);
 
   // Category-specific suggestions from the active expense
   const catId = ctx.currentExpense?.categoryId ?? null;

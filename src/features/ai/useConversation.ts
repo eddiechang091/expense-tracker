@@ -192,7 +192,7 @@ export function useConversation(
       if (!cancelled) {
         const ctx = buildCtx();
         const messages = saved?.messages ?? [];
-        const suggestions = buildSuggestedQuestions(ctx, messages.length > 0, userTexts(messages));
+        const suggestions = buildSuggestedQuestions(ctx, messages.length > 0, userTexts(messages), messages);
         dispatch({ type: "load-done", messages, suggestions, ctx });
       }
     })();
@@ -205,7 +205,7 @@ export function useConversation(
   useEffect(() => {
     if (state.status !== "ready") return;
     const ctx = buildCtx();
-    const suggestions = buildSuggestedQuestions(ctx, state.messages.length > 0, userTexts(state.messages));
+    const suggestions = buildSuggestedQuestions(ctx, state.messages.length > 0, userTexts(state.messages), state.messages);
     dispatch({ type: "ctx-update", ctx, suggestions });
   }, [buildCtx, state.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -226,7 +226,7 @@ export function useConversation(
         const result = await callLlm(trimmed, ctx, historyBeforeSend);
         const reply = makeAssistantMessage(result, activeExpense?.id);
         const allMessages = [...historyBeforeSend, userMsg, reply];
-        const suggestions = buildSuggestedQuestions(ctx, true, userTexts(allMessages));
+        const suggestions = buildSuggestedQuestions(ctx, true, userTexts(allMessages), allMessages);
         dispatch({ type: "send-ok", reply, suggestions });
         void saveConversation(allMessages);
       } catch (err) {
