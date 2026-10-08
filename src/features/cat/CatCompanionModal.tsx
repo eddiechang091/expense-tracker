@@ -41,17 +41,6 @@ const ACTION_LABELS: Record<string, string> = {
   wake: "Wake",
 };
 
-/** Trim text to at most N sentences for the speech bubble. */
-function toBubbleText(text: string, maxSentences = 3): string {
-  const parts = text.split(/([.!?。！？]+\s*)/g).filter((s) => s.trim().length > 0);
-  const sentences: string[] = [];
-  for (let i = 0; i < parts.length && sentences.length < maxSentences; i += 2) {
-    const s = (parts[i] + (parts[i + 1] ?? "")).trim();
-    if (s) sentences.push(s);
-  }
-  return sentences.join(" ") || text.slice(0, 120);
-}
-
 function StatBar({ icon, label, value, color }: { icon: string; label: string; value: number; color: string }) {
   return (
     <div className="cat-stat" title={`${label} ${Math.round(value)}`}>
@@ -119,23 +108,6 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
   useEffect(() => () => {
     if (poseTimer.current) window.clearTimeout(poseTimer.current);
   }, []);
-
-  // Show the latest AI reply in the speech bubble (2-3 sentences).
-  const lastAssistant = useMemo(() => {
-    for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === "assistant") return messages[i];
-    }
-    return null;
-  }, [messages]);
-
-  useEffect(() => {
-    if (lastAssistant && open) {
-      setBubble(toBubbleText(lastAssistant.text));
-      setPose("talk");
-      revertPose(6000);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lastAssistant?.id]);
 
   // Auto-scroll chat history to bottom.
   useEffect(() => {
