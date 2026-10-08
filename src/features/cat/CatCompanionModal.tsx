@@ -199,8 +199,7 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
   };
 
   const handleSuggestion = (q: string) => {
-    setChatInput(q);
-    // Send immediately for a snappy Tamagotchi feel.
+    // Send directly — don't leave the question text in the input box.
     void (async () => {
       try {
         await sendMessage(q);
