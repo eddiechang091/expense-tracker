@@ -317,7 +317,7 @@ export function CatCompanionModal({ open, onClose, expenseStats }: CatCompanionM
             {/* AI chat */}
             <div className="cat-chat">
               <div className="cat-chat-header">
-                <span className="cat-chat-title">💬 AI Chat</span>
+                <span className="cat-chat-title">💬Talk with your Lucky Cat🐱</span>
                 {messages.length > 0 && (
                   <button
                     type="button"
