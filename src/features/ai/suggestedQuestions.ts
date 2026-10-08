@@ -58,40 +58,101 @@ const PATTERN_QUESTIONS: SuggestionSet = [
   "Which category went up the most?",
 ];
 
+/** Normalize for comparison: lowercase, strip punctuation. */
+function norm(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+}
+
+/** Check if a candidate was already asked (exact or high word overlap). */
+function wasAsked(candidate: string, asked: string[]): boolean {
+  const c = norm(candidate);
+  const cWords = new Set(c.split(/\s+/).filter((w) => w.length > 3));
+  for (const a of asked) {
+    const na = norm(a);
+    if (na === c) return true;
+    // High overlap: >60% of candidate's significant words appear in asked
+    if (cWords.size > 0) {
+      const overlap = [...cWords].filter((w) => na.includes(w)).length;
+      if (overlap / cWords.size > 0.6) return true;
+    }
+  }
+  return false;
+}
+
+import type { ConversationMessage } from "./conversationTypes";
+
+/** Extract follow-up questions from the last N assistant messages. */
+function recentFollowUps(messages: ConversationMessage[], n = 2): string[] {
+  const followUps: string[] = [];
+  for (let i = messages.length - 1; i >= 0 && followUps.length < n; i--) {
+    const m = messages[i];
+    if (m.role === "assistant" && m.result?.followUpQuestion) {
+      const q = m.result.followUpQuestion.trim();
+      if (q && !followUps.includes(q)) followUps.push(q);
+    }
+  }
+  return followUps;
+}
+
 export function buildSuggestedQuestions(
   ctx: ConversationContext,
-  hasMessages: boolean
+  hasMessages: boolean,
+  userMessages: string[] = [],
+  allMessages: ConversationMessage[] = []
 ): string[] {
   if (!hasMessages) return [...WELCOME_SUGGESTIONS];
 
+  const asked = userMessages.map(norm).filter(Boolean);
   const suggestions: string[] = [];
+  const pushIfNew = (q: string) => {
+    if (!wasAsked(q, asked) && !suggestions.includes(q)) suggestions.push(q);
+  };
+
+  // At least 2 follow-up questions based on previous AI answers
+  for (const q of recentFollowUps(allMessages, 2)) pushIfNew(q);
 
   // Category-specific suggestions from the active expense
   const catId = ctx.currentExpense?.categoryId ?? null;
   if (catId && CATEGORY_SUGGESTIONS[catId]) {
-    suggestions.push(...CATEGORY_SUGGESTIONS[catId]);
+    for (const q of CATEGORY_SUGGESTIONS[catId]) pushIfNew(q);
   }
 
   // Budget-based suggestions
   const budgetStatus = ctx.financialSummary.budget?.status;
   if (budgetStatus === "over" || budgetStatus === "watch") {
-    suggestions.push(...BUDGET_QUESTIONS);
+    for (const q of BUDGET_QUESTIONS) pushIfNew(q);
   }
 
   // Pattern suggestions when meaningful changes exist
   if (ctx.financialSummary.changes.length > 0) {
-    suggestions.push(...PATTERN_QUESTIONS);
+    for (const q of PATTERN_QUESTIONS) pushIfNew(q);
   }
 
-  // If nothing specific, use generic suggestions
+  // Unexplored topics: suggest categories with spending that haven't been discussed
+  const discussedCats = new Set<string>();
+  for (const m of asked) {
+    for (const cat of Object.keys(CATEGORY_SUGGESTIONS)) {
+      if (m.includes(cat)) discussedCats.add(cat);
+    }
+  }
+  for (const top of ctx.financialSummary.topCategories.slice(0, 3)) {
+    const catId = top.category.toLowerCase();
+    if (!discussedCats.has(catId) && CATEGORY_SUGGESTIONS[catId]) {
+      for (const q of CATEGORY_SUGGESTIONS[catId].slice(0, 1)) pushIfNew(q);
+      if (suggestions.length >= 3) break;
+    }
+  }
+
+  // If nothing specific (or all asked), use generic unexplored suggestions
   if (suggestions.length === 0) {
-    suggestions.push(
+    for (const q of [
       "How am I doing this month?",
       "What am I spending the most on?",
-      "Am I on track with my budget?"
-    );
+      "Am I on track with my budget?",
+    ]) {
+      pushIfNew(q);
+    }
   }
 
-  // Deduplicate and cap at 4
-  return [...new Set(suggestions)].slice(0, 4);
+  return suggestions.slice(0, 3);
 }
