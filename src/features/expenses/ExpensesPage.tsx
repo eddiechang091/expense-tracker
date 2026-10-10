@@ -5,13 +5,16 @@ import { currentMonthKey, dailyTotals, filterByMonth } from "@/lib/analytics";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { useExpenses } from "@/services/expenses/useExpenses";
+import { useBudgets } from "@/services/budgets/useBudgets";
 import { useProfile } from "@/services/profile/useProfile";
 import { ExpenseList } from "./ExpenseList";
+import { ExportBar } from "./ExportBar";
 
 const SpendingChart = lazy(() => import("@/components/ui/SpendingChart"));
 
 export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => void }) {
   const { status, expenses, error, refresh, deleteExpense, isPending } = useExpenses();
+  const { budgets } = useBudgets();
   const { profile } = useProfile();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -37,6 +40,7 @@ export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => voi
           </Suspense>
         </Card>
       ) : null}
+      <ExportBar expenses={expenses} budgets={budgets} />
       <ExpenseList
         status={status}
         expenses={expenses}
