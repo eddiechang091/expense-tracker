@@ -33,7 +33,6 @@ export function ExportBar({ expenses, budgets }: { expenses: Expense[]; budgets:
   const months = availableMonths(expenses);
   const [monthKey, setMonthKey] = useState(currentMonthKey());
   const currency = profile.currency ?? "USD";
-  const username = profile.displayName || "User";
 
   const monthExpenses = filterByMonth(expenses, monthKey);
 
@@ -57,7 +56,6 @@ export function ExportBar({ expenses, budgets }: { expenses: Expense[]; budgets:
       monthKey,
       monthLabel: monthLabel(monthKey),
       currency,
-      username,
       theme,
     });
     notify("PDF statement downloaded.");

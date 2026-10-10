@@ -14,7 +14,6 @@ export interface StatementOptions {
   monthKey: string;
   monthLabel: string;
   currency: string;
-  username: string;
   theme: ThemeId;
 }
 
@@ -50,8 +49,6 @@ function header(doc: jsPDF, opts: StatementOptions): number {
   doc.setTextColor(100, 100, 100);
   y += 7;
   doc.text(`Monthly Statement — ${opts.monthLabel}`, MARGIN, y);
-  y += 6;
-  doc.text(`Prepared for ${opts.username}`, MARGIN, y);
   y += 4;
   doc.setDrawColor(200, 200, 200);
   doc.line(MARGIN, y, PAGE_W - MARGIN, y);
@@ -76,12 +73,7 @@ function summary(doc: jsPDF, opts: StatementOptions, y: number): number {
   doc.text(`Transactions: ${opts.expenses.length}`, MARGIN, y);
   y += 6;
   if (overallBudget) {
-    const remaining = overallBudget.amount - total;
-    doc.text(
-      `Budget: ${money(overallBudget.amount, overallBudget.currency)} — ${money(Math.max(0, remaining), overallBudget.currency)} remaining`,
-      MARGIN,
-      y
-    );
+    doc.text(`Budget: ${money(overallBudget.amount, overallBudget.currency)}`, MARGIN, y);
     y += 6;
   }
   if (byCat.length > 0) {
