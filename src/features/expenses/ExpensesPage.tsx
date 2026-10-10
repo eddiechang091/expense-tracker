@@ -29,14 +29,14 @@ export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => voi
         title="Expenses"
         lede="Everything you have tracked."
         actions={
-          <>
-            <Button variant="ghost" size="sm" onClick={() => setExportOpen(true)}>
-              Export
-            </Button>
+          <div className="row" style={{ gap: 8 }}>
             <Button variant="secondary" size="sm" onClick={() => onNavigate("/add-expense")}>
               Add expense
             </Button>
-          </>
+            <Button variant="secondary" size="sm" onClick={() => setExportOpen(true)}>
+              Export
+            </Button>
+          </div>
         }
       />
       {monthExpenses.length > 0 ? (
