@@ -17,6 +17,10 @@ export interface Expense {
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  /** Original amount/currency when converted via FX (amount+currency hold converted values). */
+  originalAmount?: number;
+  originalCurrency?: string;
+  fxRate?: number;
 }
 
 export interface MonthlyBudget {

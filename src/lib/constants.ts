@@ -2,7 +2,7 @@ import type { Category } from "./types";
 
 export const APP_NAMESPACE = "expense-tracker";
 export const STORAGE_VERSION = 1;
-export const DEFAULT_CURRENCY = "CAD";
+export const DEFAULT_CURRENCY = "USD"; // last-resort fallback; real default comes from user profile
 
 export const STORAGE_KEYS = {
   profile: "profile",

@@ -10,6 +10,7 @@ import { SettingsPage } from "@/features/settings/SettingsPage";
 import { NotFoundPage } from "@/features/NotFoundPage";
 import { ExpensesProvider } from "@/services/expenses/useExpenses";
 import { ProfileProvider } from "@/services/profile/useProfile";
+import { CurrencyGate } from "@/components/ui/CurrencyGate";
 import { BudgetsProvider } from "@/services/budgets/useBudgets";
 import { CatProvider } from "@/services/cat/useCat";
 import { ThemeProvider, useTheme } from "@/services/theme/useTheme";
@@ -35,6 +36,7 @@ export function App() {
     <ToastProvider>
       <ThemeProvider>
       <ProfileProvider>
+      <CurrencyGate>
       <ExpensesProvider>
         <BudgetsProvider>
           <CatProvider>
@@ -45,6 +47,7 @@ export function App() {
           </CatProvider>
         </BudgetsProvider>
       </ExpensesProvider>
+      </CurrencyGate>
       </ProfileProvider>
       </ThemeProvider>
     </ToastProvider>

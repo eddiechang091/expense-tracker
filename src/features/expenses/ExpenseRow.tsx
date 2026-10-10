@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { CategoryChip } from "@/components/ui/CategoryChip";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useProfile } from "@/services/profile/useProfile";
 import { ExpenseForm, type ExpenseFormValues } from "./ExpenseForm";
 
 function formatDateLabel(iso: string): string {
@@ -35,6 +36,7 @@ export function ExpenseRow({
   onSaveEdit: (values: ExpenseFormValues) => Promise<void>;
   onDelete: () => Promise<void>;
 }) {
+  const { profile } = useProfile();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
   const category = getCategoryById(expense.categoryId);
@@ -53,6 +55,7 @@ export function ExpenseRow({
             paymentMethod: expense.paymentMethod ?? "Card",
             notes: expense.notes ?? "",
           }}
+          defaultCurrency={profile.currency || "USD"}
           submitLabel="Save changes"
           saving={savingEdit}
           onCancel={onCancelEdit}
@@ -85,6 +88,12 @@ export function ExpenseRow({
         </div>
         <div className="expense-side">
           <span className="expense-amount">{money(expense.amount, expense.currency)}</span>
+          {expense.originalAmount != null && expense.originalCurrency ? (
+            <span className="muted" style={{ fontSize: 11 }}>
+              {money(expense.originalAmount, expense.originalCurrency)}
+              {expense.fxRate ? ` @ ${expense.fxRate.toFixed(4)}` : ""}
+            </span>
+          ) : null}
           <div className="row expense-actions">
             <Button type="button" variant="ghost" size="sm" onClick={onEdit} disabled={deleting}>
               Edit

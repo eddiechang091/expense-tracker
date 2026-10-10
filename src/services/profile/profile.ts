@@ -34,6 +34,8 @@ export interface UserProfile {
   /** Legacy emoji avatar — used when avatarId is unset. */
   avatarEmoji: string;
   status: ProfileStatus;
+  /** Default currency code (ISO 4217). null = user hasn't chosen yet. */
+  currency: string | null;
 }
 
 export const DEFAULT_PROFILE: UserProfile = {
@@ -44,6 +46,7 @@ export const DEFAULT_PROFILE: UserProfile = {
   avatarId: "avatar-lucky-cat",
   avatarEmoji: "😊",
   status: "available",
+  currency: null,
 };
 
 export interface AnnaUserInfo {

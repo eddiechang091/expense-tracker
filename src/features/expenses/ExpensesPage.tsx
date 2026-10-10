@@ -5,15 +5,17 @@ import { currentMonthKey, dailyTotals, filterByMonth } from "@/lib/analytics";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { useExpenses } from "@/services/expenses/useExpenses";
+import { useProfile } from "@/services/profile/useProfile";
 import { ExpenseList } from "./ExpenseList";
 
 const SpendingChart = lazy(() => import("@/components/ui/SpendingChart"));
 
 export function ExpensesPage({ onNavigate }: { onNavigate: (path: string) => void }) {
   const { status, expenses, error, refresh, deleteExpense, isPending } = useExpenses();
+  const { profile } = useProfile();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const currency = expenses[0]?.currency ?? "CAD";
+  const currency = expenses[0]?.currency ?? profile.currency ?? "USD";
   const monthExpenses = filterByMonth(expenses, currentMonthKey());
   const chartData = dailyTotals(monthExpenses, currentMonthKey());
 

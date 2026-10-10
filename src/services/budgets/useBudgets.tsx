@@ -10,6 +10,7 @@ import {
 import type { MonthlyBudget } from "@/lib/types";
 import { BudgetStoreError, getBudgetRepository, type BudgetInput } from "./repository";
 import { useToast } from "@/components/ui/Toast";
+import { DEFAULT_CURRENCY } from "@/lib/constants";
 
 export type BudgetsStatus = "loading" | "ready" | "error";
 
@@ -90,7 +91,7 @@ export function BudgetsProvider({ children }: { children: ReactNode }) {
         id: snapshot.find((b) => b.categoryId === (input.categoryId ?? null))?.id ?? `temp-${Date.now()}`,
         categoryId: input.categoryId ?? null,
         amount: input.amount,
-        currency: (input.currency || "CAD").toUpperCase(),
+        currency: (input.currency || DEFAULT_CURRENCY).toUpperCase(),
         period: "monthly",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

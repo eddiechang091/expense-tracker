@@ -11,7 +11,7 @@ import { money } from "@/lib/utils";
 
 export default function SpendingChart({
   data,
-  currency = "CAD",
+  currency = "USD",
 }: {
   data: DayTotal[];
   currency?: string;

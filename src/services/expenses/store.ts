@@ -1,6 +1,6 @@
 import type { KvStore } from "@/services/anna/storage";
 import { getKvStore } from "@/services/anna/storage";
-import { STORAGE_KEYS, STORAGE_VERSION } from "@/lib/constants";
+import { STORAGE_KEYS, STORAGE_VERSION, DEFAULT_CURRENCY } from "@/lib/constants";
 import { isValidIsoDate, newId } from "@/lib/utils";
 import { normalizeCategoryId } from "@/lib/categories";
 import type { Expense } from "@/lib/types";
@@ -13,6 +13,9 @@ export interface NewExpenseInput {
   date: string;
   paymentMethod?: string;
   notes?: string;
+  originalAmount?: number;
+  originalCurrency?: string;
+  fxRate?: number;
 }
 
 export interface ExpensePatch {
@@ -23,6 +26,9 @@ export interface ExpensePatch {
   date?: string;
   paymentMethod?: string;
   notes?: string;
+  originalAmount?: number;
+  originalCurrency?: string;
+  fxRate?: number;
 }
 
 export type ExpenseStoreErrorCode = "not-found" | "storage" | "too-large";
@@ -111,12 +117,15 @@ export function sanitizeNewExpense(input: NewExpenseInput): NewExpenseInput {
   }
   return {
     amount: Math.round(input.amount * 100) / 100,
-    currency: (input.currency || "CAD").trim().toUpperCase() || "CAD",
+    currency: (input.currency || DEFAULT_CURRENCY).trim().toUpperCase() || DEFAULT_CURRENCY,
     categoryId: normalizeCategoryId(input.categoryId),
     description: (input.description ?? "").trim(),
     date: input.date,
     paymentMethod: input.paymentMethod?.trim() ? input.paymentMethod.trim() : undefined,
     notes: input.notes?.trim() ? input.notes.trim() : undefined,
+    originalAmount: input.originalAmount,
+    originalCurrency: input.originalCurrency?.toUpperCase(),
+    fxRate: input.fxRate,
   };
 }
 

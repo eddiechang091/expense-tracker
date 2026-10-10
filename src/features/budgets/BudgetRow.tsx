@@ -4,12 +4,12 @@ import type { MonthlyBudget } from "@/lib/types";
 import type { BudgetInput } from "@/services/budgets/repository";
 import { BudgetProgress } from "@/components/ui/BudgetProgress";
 import { Button } from "@/components/ui/Button";
-import { AmountInput, Field } from "@/components/ui/Input";
+import { AmountInput, Field, Select } from "@/components/ui/Input";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { getCategoryById } from "@/lib/categories";
 import { calculateBudgetProgress } from "@/lib/analytics";
 import { money, parseAmountInput } from "@/lib/utils";
-import { DEFAULT_CURRENCY } from "@/lib/constants";
+import { CURRENCIES, currencyLabel } from "@/lib/currencies";
 
 function budgetStatusLabel(spent: number, limit: number, currency: string): string {
   const info = calculateBudgetProgress(spent, limit);
@@ -34,6 +34,7 @@ export function BudgetRow({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [amountText, setAmountText] = useState(String(budget.amount));
+  const [currency, setCurrency] = useState(budget.currency);
   const [amountError, setAmountError] = useState("");
 
   const cat = getCategoryById(budget.categoryId);
@@ -53,7 +54,7 @@ export function BudgetRow({
     setAmountError("");
     setSaving(true);
     try {
-      await onSave({ categoryId: budget.categoryId, amount, currency: DEFAULT_CURRENCY });
+      await onSave({ categoryId: budget.categoryId, amount, currency });
       setEditing(false);
     } finally {
       setSaving(false);
@@ -67,7 +68,7 @@ export function BudgetRow({
           <span className="budget-item-icon" aria-hidden="true">{icon}</span>
           <span className="budget-item-name">{label}</span>
         </div>
-        <Field label="Monthly limit" hint="In CAD">
+        <Field label="Monthly limit">
           <AmountInput
             value={amountText}
             onChange={(e) => setAmountText(e.target.value)}
@@ -75,6 +76,15 @@ export function BudgetRow({
             aria-invalid={amountError ? "true" : undefined}
           />
           {amountError ? <span className="field-error" role="alert">{amountError}</span> : null}
+        </Field>
+        <Field label="Currency">
+          <Select value={currency} onChange={(e) => setCurrency(e.target.value)}>
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {currencyLabel(c.code)} ({c.symbol})
+              </option>
+            ))}
+          </Select>
         </Field>
         <div className="row" style={{ marginTop: 10 }}>
           <Button type="submit" size="sm" disabled={saving}>
