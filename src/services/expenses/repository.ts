@@ -66,6 +66,21 @@ function applyPatch(current: Expense, patch: ExpensePatch): Expense {
   if (patch.notes !== undefined) {
     merged.notes = patch.notes.trim() ? patch.notes.trim() : undefined;
   }
+  if (patch.originalAmount !== undefined) {
+    merged.originalAmount = Number.isFinite(patch.originalAmount) ? patch.originalAmount : undefined;
+  } else if ("originalAmount" in patch) {
+    merged.originalAmount = undefined;
+  }
+  if (patch.originalCurrency !== undefined) {
+    merged.originalCurrency = patch.originalCurrency.trim().toUpperCase() || undefined;
+  } else if ("originalCurrency" in patch) {
+    merged.originalCurrency = undefined;
+  }
+  if (patch.fxRate !== undefined) {
+    merged.fxRate = Number.isFinite(patch.fxRate) && patch.fxRate > 0 ? patch.fxRate : undefined;
+  } else if ("fxRate" in patch) {
+    merged.fxRate = undefined;
+  }
   merged.updatedAt = new Date().toISOString();
   return merged;
 }
