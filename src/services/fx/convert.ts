@@ -1,7 +1,7 @@
 import type { Expense, MonthlyBudget } from "@/lib/types";
 import type { ExpensePatch } from "@/services/expenses/store";
 import type { BudgetInput } from "@/services/budgets/repository";
-import { getRate } from "./rates";
+import { getRateInfo } from "./rates";
 import { money } from "@/lib/utils";
 
 export interface ConversionPlan {
@@ -54,10 +54,11 @@ export async function convertAllToCurrency(
       expenseCount++;
       continue;
     }
-    const rate = await getRate(srcCurrency, to);
-    if (rate === null) {
+    const info = await getRateInfo(srcCurrency, to);
+    if (info === null) {
       throw new Error(`Rate unavailable for ${srcCurrency} → ${to}`);
     }
+    const rate = info.rate;
     if (primaryRate === null) primaryRate = rate;
     const note = revalueNote(srcCurrency, to, rate);
     await updateExpense(e.id, {
@@ -73,10 +74,11 @@ export async function convertAllToCurrency(
 
   for (const b of budgets) {
     if (b.currency.toUpperCase() === to) continue;
-    const rate = await getRate(b.currency.toUpperCase(), to);
-    if (rate === null) {
+    const info = await getRateInfo(b.currency.toUpperCase(), to);
+    if (info === null) {
       throw new Error(`Rate unavailable for ${b.currency} → ${to}`);
     }
+    const rate = info.rate;
     if (primaryRate === null) primaryRate = rate;
     await saveBudget({
       categoryId: b.categoryId,

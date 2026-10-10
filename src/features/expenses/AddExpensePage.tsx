@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/Card";
 import { useToast } from "@/components/ui/Toast";
 import { useExpenses } from "@/services/expenses/useExpenses";
 import { useProfile } from "@/services/profile/useProfile";
-import { getRate, fxNote } from "@/services/fx/rates";
+import { getRateInfo, fxNote } from "@/services/fx/rates";
 import { money } from "@/lib/utils";
 import { ExpenseForm } from "./ExpenseForm";
 
@@ -36,14 +36,14 @@ export function AddExpensePage({ onNavigate }: { onNavigate: (path: string) => v
 
               // Convert to default currency when a different currency was chosen
               if (currency !== defaultCurrency) {
-                const rate = await getRate(currency, defaultCurrency);
-                if (rate !== null) {
+                const info = await getRateInfo(currency, defaultCurrency);
+                if (info !== null) {
                   originalAmount = values.amount;
                   originalCurrency = currency;
-                  fxRate = rate;
-                  amount = Math.round(values.amount * rate * 100) / 100;
+                  fxRate = info.rate;
+                  amount = Math.round(values.amount * info.rate * 100) / 100;
                   currency = defaultCurrency;
-                  const note = `${fxNote(originalCurrency, defaultCurrency, rate)} — converted ${money(originalAmount, originalCurrency)} to ${money(amount, defaultCurrency)}`;
+                  const note = `${fxNote(originalCurrency, defaultCurrency, info.rate, info.asOf, info.live)} — converted ${money(originalAmount, originalCurrency)} to ${money(amount, defaultCurrency)}`;
                   notes = notes ? `${notes}\n${note}` : note;
                 } else {
                   notify("Live rate unavailable — saved in original currency.", "error");

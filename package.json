@@ -10,7 +10,9 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "validate": "anna-app validate --strict",
-    "harness": "anna-app dev --port 5191 --no-llm"
+    "harness": "anna-app dev --port 5191 --no-llm",
+    "prebuild": "node scripts/fetch-fx-rates.mjs",
+    "fx:fetch": "node scripts/fetch-fx-rates.mjs"
   },
   "dependencies": {
     "jspdf": "^4.2.1",
