@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { AmountInput, Field, Select, Textarea, TextInput } from "@/components/ui/Input";
 import { CategoryPicker } from "@/components/ui/CategoryPicker";
-import { DEFAULT_CURRENCY } from "@/lib/constants";
+import { CURRENCIES, currencyLabel } from "@/lib/currencies";
 import { todayIso, parseAmountInput } from "@/lib/utils";
 import { validateExpenseDraft, type ExpenseFieldErrors } from "@/lib/validation";
 
@@ -21,18 +21,22 @@ const PAYMENT_METHODS = ["Card", "Cash", "Transfer", "Other"];
 
 export function ExpenseForm({
   initial,
+  defaultCurrency,
   submitLabel,
   saving,
   onSubmit,
   onCancel,
 }: {
   initial?: Partial<ExpenseFormValues>;
+  /** User's default currency — preselected in the currency dropdown. */
+  defaultCurrency: string;
   submitLabel: string;
   saving: boolean;
   onSubmit: (values: ExpenseFormValues) => Promise<void>;
   onCancel?: () => void;
 }) {
   const [amountText, setAmountText] = useState(initial?.amount !== undefined ? String(initial.amount) : "");
+  const [currency, setCurrency] = useState(initial?.currency ?? defaultCurrency);
   const [categoryId, setCategoryId] = useState(initial?.categoryId ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [date, setDate] = useState(initial?.date ?? todayIso());
@@ -50,10 +54,10 @@ export function ExpenseForm({
       date,
       paymentMethod,
       notes,
-      currency: DEFAULT_CURRENCY,
+      currency,
     });
     setErrors(result.errors);
-  }, [amountText, categoryId, description, date, paymentMethod, notes, touched]);
+  }, [amountText, categoryId, description, date, paymentMethod, notes, currency, touched]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -65,11 +69,11 @@ export function ExpenseForm({
       date,
       paymentMethod,
       notes,
-      currency: DEFAULT_CURRENCY,
+      currency,
     });
     setErrors(result.errors);
     if (!result.value) return;
-    await onSubmit({ ...result.value, currency: result.value.currency || DEFAULT_CURRENCY });
+    await onSubmit({ ...result.value, currency: result.value.currency || defaultCurrency });
   }
 
   const amountPreview = parseAmountInput(amountText);
@@ -90,6 +94,15 @@ export function ExpenseForm({
             {errors.amount}
           </span>
         ) : null}
+      </Field>
+      <Field label="Currency">
+        <Select value={currency} onChange={(event) => setCurrency(event.target.value)}>
+          {CURRENCIES.map((c) => (
+            <option key={c.code} value={c.code}>
+              {currencyLabel(c.code)} ({c.symbol})
+            </option>
+          ))}
+        </Select>
       </Field>
       <Field label="Category">
         <CategoryPicker value={categoryId} onChange={setCategoryId} />

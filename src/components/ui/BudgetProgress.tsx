@@ -3,7 +3,7 @@ import { money } from "@/lib/utils";
 export function BudgetProgress({
   spent,
   limit,
-  currency = "CAD",
+  currency = "USD",
 }: {
   spent: number;
   limit: number;

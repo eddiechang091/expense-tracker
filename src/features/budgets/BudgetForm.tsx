@@ -2,8 +2,10 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { AmountInput, Field, Select } from "@/components/ui/Input";
-import { DEFAULT_CATEGORIES, DEFAULT_CURRENCY } from "@/lib/constants";
+import { DEFAULT_CATEGORIES } from "@/lib/constants";
+import { CURRENCIES, currencyLabel } from "@/lib/currencies";
 import { parseAmountInput } from "@/lib/utils";
+import { useProfile } from "@/services/profile/useProfile";
 import type { MonthlyBudget } from "@/lib/types";
 import type { BudgetInput } from "@/services/budgets/repository";
 
@@ -18,6 +20,8 @@ export function BudgetForm({
   onCancel: () => void;
   saving: boolean;
 }) {
+  const { profile } = useProfile();
+  const defaultCurrency = profile.currency || "USD";
   const takenCategories = new Set(existingBudgets.map((b) => b.categoryId ?? "__overall__"));
   const overallTaken = takenCategories.has("__overall__");
 
@@ -33,6 +37,7 @@ export function BudgetForm({
 
   const [categoryValue, setCategoryValue] = useState(availableOptions[0]?.value ?? "");
   const [amountText, setAmountText] = useState("");
+  const [currency, setCurrency] = useState(defaultCurrency);
   const [amountError, setAmountError] = useState("");
 
   if (availableOptions.length === 0) {
@@ -54,7 +59,7 @@ export function BudgetForm({
     await onSubmit({
       categoryId: categoryValue === "" ? null : categoryValue,
       amount,
-      currency: DEFAULT_CURRENCY,
+      currency,
     });
   }
 
@@ -69,7 +74,7 @@ export function BudgetForm({
           ))}
         </Select>
       </Field>
-      <Field label="Monthly limit" hint="In CAD">
+      <Field label="Monthly limit">
         <AmountInput
           value={amountText}
           onChange={(e) => setAmountText(e.target.value)}
@@ -83,6 +88,15 @@ export function BudgetForm({
             {amountError}
           </span>
         ) : null}
+      </Field>
+      <Field label="Currency">
+        <Select value={currency} onChange={(e) => setCurrency(e.target.value)}>
+          {CURRENCIES.map((c) => (
+            <option key={c.code} value={c.code}>
+              {currencyLabel(c.code)} ({c.symbol})
+            </option>
+          ))}
+        </Select>
       </Field>
       <div className="row">
         <Button type="submit" disabled={saving}>

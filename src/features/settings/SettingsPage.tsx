@@ -3,6 +3,8 @@ import { Card } from "@/components/ui/Card";
 import { AnnaStatusCard } from "./AnnaStatusCard";
 import { THEMES } from "@/services/theme/themes";
 import { useTheme } from "@/services/theme/useTheme";
+import { CURRENCIES } from "@/lib/currencies";
+import { useProfile } from "@/services/profile/useProfile";
 
 function ThemePicker() {
   const { theme, setTheme } = useTheme();
@@ -28,6 +30,38 @@ function ThemePicker() {
   );
 }
 
+function CurrencyPicker() {
+  const { profile, update } = useProfile();
+  const current = profile.currency || "USD";
+  return (
+    <div>
+      <label
+        htmlFor="default-currency"
+        style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 8 }}
+      >
+        Default currency
+      </label>
+      <select
+        id="default-currency"
+        value={current}
+        onChange={(e) => update({ currency: e.target.value })}
+        className="input"
+        style={{ maxWidth: 320 }}
+      >
+        {CURRENCIES.map((c) => (
+          <option key={c.code} value={c.code}>
+            {c.code} — {c.name} ({c.symbol})
+          </option>
+        ))}
+      </select>
+      <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
+        Used as the default when logging expenses and setting budgets. Expenses
+        logged in another currency are converted to this using live rates.
+      </p>
+    </div>
+  );
+}
+
 export function SettingsPage() {
   return (
     <>
@@ -38,6 +72,9 @@ export function SettingsPage() {
           Pick a theme — it recolors the whole app, your cat companion, and the page background.
         </p>
         <ThemePicker />
+        <div style={{ marginTop: 24 }}>
+          <CurrencyPicker />
+        </div>
       </Card>
     </>
   );

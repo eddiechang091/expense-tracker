@@ -5,7 +5,7 @@ const CURRENCY_LOCALES: Record<string, string> = {
   GBP: "en-GB",
 };
 
-export function money(amount: number, currency = "CAD"): string {
+export function money(amount: number, currency = "USD"): string {
   const safe = Number.isFinite(amount) ? amount : 0;
   const locale = CURRENCY_LOCALES[currency] ?? "en-CA";
   try {
